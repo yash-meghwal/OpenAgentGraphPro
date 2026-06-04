@@ -870,32 +870,71 @@ describe("graph agent collaboration routes", () => {
     await app.close();
   });
 
-  it("rejects external agent mutations without operator/admin access", async () => {
+  it("rejects all external agent mutations without operator/admin access", async () => {
     const app = Fastify();
     await app.register(graphRoutes);
 
-    const missing = await app.inject({
-      method: "POST",
-      url: "/graphs/graph-1/agent/progress",
-      payload: {
-        agent: { agentId: "codex", displayName: "Codex", kind: "codex" },
-        status: "progress",
-        summary: "Working.",
+    const agent = { agentId: "codex", displayName: "Codex", kind: "codex" };
+    const mutationCases = [
+      {
+        url: "/graphs/graph-1/agent/register",
+        payload: { agent },
       },
-    });
-    const viewer = await app.inject({
-      method: "POST",
-      url: "/graphs/graph-1/agent/evidence",
-      headers: { "x-openagentgraph-actor-id": "viewer" },
-      payload: {
-        agent: { agentId: "codex", displayName: "Codex", kind: "codex" },
-        summary: "Checked files.",
+      {
+        url: "/graphs/graph-1/agent/progress",
+        payload: {
+          agent,
+          status: "progress",
+          summary: "Working.",
+        },
       },
-    });
+      {
+        url: "/graphs/graph-1/agent/evidence",
+        payload: {
+          agent,
+          summary: "Checked files.",
+        },
+      },
+      {
+        url: "/graphs/graph-1/agent/plan-proposals",
+        payload: {
+          agent,
+          title: "Add tests",
+          summary: "Add focused tests.",
+          nodes: [{ title: "Write tests", intent: "Cover the route." }],
+        },
+      },
+      {
+        url: "/graphs/graph-1/agent/plan-proposals/proposal-1/accept",
+        payload: {},
+      },
+      {
+        url: "/graphs/graph-1/agent/plan-proposals/proposal-1/dismiss",
+        payload: {
+          reason: "Out of scope.",
+        },
+      },
+    ];
 
-    expect(missing.statusCode).toBe(401);
-    expect(viewer.statusCode).toBe(403);
+    for (const mutation of mutationCases) {
+      const missing = await app.inject({
+        method: "POST",
+        url: mutation.url,
+        payload: mutation.payload,
+      });
+      const viewer = await app.inject({
+        method: "POST",
+        url: mutation.url,
+        headers: { "x-openagentgraph-actor-id": "viewer" },
+        payload: mutation.payload,
+      });
+
+      expect(missing.statusCode, `${mutation.url} without actor`).toBe(401);
+      expect(viewer.statusCode, `${mutation.url} as viewer`).toBe(403);
+    }
+
     expect(repoMocks.appendGraphEvent).not.toHaveBeenCalled();
+    expect(repoMocks.appendGraphEvents).not.toHaveBeenCalled();
     await app.close();
   });
 
