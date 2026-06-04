@@ -36,6 +36,7 @@ Add new event kinds:
 - `agent.evidence_submitted`
 - `agent.plan_proposed`
 - `agent.plan_accepted`
+- `agent.plan_dismissed`
 
 These events must not automatically mark runner nodes completed or failed.
 
@@ -50,6 +51,7 @@ Add:
 - `POST /graphs/:graphId/agent/evidence`
 - `POST /graphs/:graphId/agent/plan-proposals`
 - `POST /graphs/:graphId/agent/plan-proposals/:proposalId/accept`
+- `POST /graphs/:graphId/agent/plan-proposals/:proposalId/dismiss`
 
 Keep existing runner behavior unchanged:
 
@@ -67,6 +69,8 @@ Add SDK methods:
 - `reportProgress()`
 - `submitEvidence()`
 - `proposePlan()`
+- `acceptPlanProposal()`
+- `dismissPlanProposal()`
 
 Keep `wrapOpenAI()` behavior unchanged.
 
@@ -96,7 +100,7 @@ Update:
 - `agentId` is metadata only and never grants permission.
 - Payloads are bounded with validation.
 - No API keys, source bodies, `.env` contents, or private file contents may be returned in context packs, events, reports, logs, or frontend UI.
-- Plan proposals are inert until accepted by an operator/admin.
+- Plan proposals are inert until accepted or dismissed by an operator/admin.
 
 ## Pro Roadmap
 
