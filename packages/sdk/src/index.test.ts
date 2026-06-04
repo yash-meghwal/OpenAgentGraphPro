@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 import { createOpenAgentGraphClient, wrapOpenAI } from "./index";
+import type {
+  OpenAgentGraphAgentContextPack,
+  OpenAgentGraphFrontierResponse,
+} from "./index";
 
 function makeOpenAI(response: unknown) {
   return {
@@ -262,11 +266,63 @@ describe("OpenAgentGraph SDK OpenAI instrumentation", () => {
 
 describe("OpenAgentGraph SDK agent collaboration", () => {
   it("fetches frontier and agent context with auth headers", async () => {
+    const frontierPayload: OpenAgentGraphFrontierResponse = {
+      graphId: "graph 1",
+      generatedAt: "2026-06-04T00:00:00.000Z",
+      summary: {
+        runControlState: "idle",
+        frontierStatus: "on_track",
+        readyCount: 1,
+        runningCount: 0,
+        blockedCount: 0,
+        openProposalCount: 0,
+      },
+      frontier: [
+        {
+          nodeId: "node-1",
+          title: "Review frontier",
+          kind: "work",
+          status: "ready",
+          humanSummary: "Review the current frontier.",
+          dependsOnNodeIds: [],
+          evidenceCoverage: "partial",
+          confidenceBadge: "medium",
+          updatedAt: "2026-06-04T00:00:00.000Z",
+        },
+      ],
+      recentAgentActivity: [],
+      planProposals: [],
+    };
+    const contextPayload: OpenAgentGraphAgentContextPack = {
+      graphId: "graph 1",
+      generatedAt: "2026-06-04T00:00:01.000Z",
+      graph: {
+        id: "graph 1",
+        title: "Agent SDK test",
+        goal: "Type SDK coordination responses.",
+        status: "idle",
+        activeGoalVersionId: "goal-1",
+      },
+      run: {
+        runControlState: "idle",
+        frontierStatus: "on_track",
+        plannedNodeCount: 1,
+        completedNodeCount: 0,
+        failedNodeCount: 0,
+        runHealthSummary: "The run is ready.",
+      },
+      selectedNode: frontierPayload.frontier[0],
+      frontier: frontierPayload.frontier,
+      recentAgentActivity: [],
+      planProposals: [],
+      instructions: ["Verify source files before editing."],
+    };
+    const responses = [frontierPayload, contextPayload];
     const fetchMock = vi.fn(async () => ({
       ok: true,
       status: 200,
       headers: new Headers({ "content-type": "application/json" }),
-      json: async () => ({ ok: true }),
+      json: async () => responses.shift() ?? {},
     })) as unknown as typeof fetch;
     const client = createOpenAgentGraphClient({
       baseUrl: "http://localhost:3001/",
@@ -275,8 +331,11 @@ describe("OpenAgentGraph SDK agent collaboration", () => {
       fetch: fetchMock,
     });
 
-    await expect(client.getFrontier({ limit: 3 })).resolves.toEqual({ ok: true });
-    await expect(client.getAgentContext({ nodeId: "node-1", frontierLimit: 2 })).resolves.toEqual({ ok: true });
+    const frontierResult: OpenAgentGraphFrontierResponse = await client.getFrontier({ limit: 3 });
+    const contextResult: OpenAgentGraphAgentContextPack = await client.getAgentContext({ nodeId: "node-1", frontierLimit: 2 });
+
+    expect(frontierResult.frontier[0].status).toBe("ready");
+    expect(contextResult.selectedNode?.nodeId).toBe("node-1");
 
     expect(fetchMock).toHaveBeenNthCalledWith(
       1,
