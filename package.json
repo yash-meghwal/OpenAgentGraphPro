@@ -11,6 +11,8 @@
   ],
   "scripts": {
     "dev": "concurrently \"npm run dev --workspace=packages/backend\" \"npm run dev --workspace=packages/frontend\"",
+    "launch": "tsx packages/backend/src/cli/launchLocal.ts",
+    "launch:desktop": "tsx packages/backend/src/cli/launchLocal.ts --desktop",
     "electron:dev": "npm run build --workspace=packages/electron && concurrently \"npm run dev --workspace=packages/backend\" \"npm run dev --workspace=packages/frontend\" \"npm run dev --workspace=packages/electron\"",
     "electron:build": "npm run build && npm run build --workspace=packages/electron",
     "electron:start": "npm run electron:build && npm run start --workspace=packages/electron",
@@ -26,7 +28,8 @@
     "handoff:print": "npm run build --workspace=packages/shared --silent && npm run build --workspace=packages/backend --silent && node packages/backend/dist/cli/handoff.js",
     "handoff:write": "npm run build --workspace=packages/shared --silent && npm run build --workspace=packages/backend --silent && node packages/backend/dist/cli/handoff.js --output GRAPH_REPORT.md",
     "docker:build": "docker build -t openagentgraph-backend .",
-    "pro:git-guard": "pwsh -File scripts/setup-pro-git-guard.ps1"
+    "pro:git-guard": "pwsh -File scripts/setup-pro-git-guard.ps1",
+    "pro:launch-local": "pwsh -File scripts/launch-local.ps1"
   },
   "devDependencies": {
     "@playwright/test": "^1.59.1",

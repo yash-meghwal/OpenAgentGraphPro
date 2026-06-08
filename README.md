@@ -12,11 +12,16 @@ OpenAgentGraph Pro is the human-friendly edition of [OpenAgentGraph](https://git
 
 ### 1. Start the app
 
+**One-click (recommended on Windows):** double-click [`Launch OpenAgentGraph.cmd`](Launch%20OpenAgentGraph.cmd) in the repo folder. The launcher installs dependencies if needed, starts backend + frontend, waits for readiness, and opens your browser.
+
+**From a terminal:**
+
 ```powershell
 cd <path-to-OpenAgentGraphPro>
-npm ci
-npm run dev
+npm run launch
 ```
+
+Manual dev mode is still available with `npm ci` then `npm run dev`. Desktop shell: `npm run launch:desktop`.
 
 Open **http://localhost:5173** in your browser. The frontend talks to the backend on port `3001` through the built-in `/api` proxy.
 

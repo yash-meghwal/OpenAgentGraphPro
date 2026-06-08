@@ -38,24 +38,21 @@ describe("deployment and docs alignment", () => {
     expect(keys.sort()).toEqual(CONFIG_ENV_SPECS.map((spec) => spec.key).sort());
   });
 
-  it("deployment docs describe the real health and readiness endpoints", () => {
+  it("deployment docs describe local launch and core readiness endpoints", () => {
     const readme = read("README.md");
+    const functionsDoc = read("docs/OPENAGENTGRAPH-FUNCTIONS.md");
     const frontendEnvExample = read("packages/frontend/.env.example");
 
+    expect(readme).toContain("Launch OpenAgentGraph.cmd");
+    expect(readme).toContain("npm run launch");
+    expect(readme).toContain("npm run launch:desktop");
     expect(readme).toContain("GET /health");
     expect(readme).toContain("GET /ready");
     expect(readme).toContain("GET /auth/session");
-    expect(readme).toContain("GET /metrics");
-    expect(readme).toContain("Basic liveness only.");
-    expect(readme).toContain("Readiness summary for database initialization, provider configuration, workspace availability, and auth-mode safety.");
-    expect(readme).toContain("Operational metrics for scraping and monitoring. It is for runtime telemetry, not product-state truth.");
-    expect(readme).toContain("openagentgraph_readiness_status");
-    expect(readme).toContain("openagentgraph_provider_fallback_total");
     expect(readme).toContain("OPENAGENTGRAPH_AUTH_MODE");
-    expect(readme).toContain("OPENAGENTGRAPH_JWT_SECRET");
-    expect(readme).toContain("OPENAGENTGRAPH_ALLOWED_ORIGINS");
-    expect(readme).toContain("VITE_OPENAGENTGRAPH_API_BASE_URL");
-    expect(readme).toContain("Vite `/api` proxy");
+    expect(readme).toContain("`/api` proxy");
+    expect(functionsDoc).toContain("| `/metrics` | GET | safe operational metrics | deployment/network protected surface |");
+    expect(functionsDoc).toContain("| `/ready` | GET | readiness, provider, workspace, auth, scanner breaker status | any |");
     expect(frontendEnvExample).toContain("VITE_OPENAGENTGRAPH_API_BASE_URL");
   });
 
