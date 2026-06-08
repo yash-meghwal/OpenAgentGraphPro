@@ -1,3 +1,4 @@
+import path from "path";
 import { describe, expect, it } from "vitest";
 import {
   buildBrowserOpenCommand,
@@ -13,13 +14,14 @@ import {
 
 describe("launchLocalCore", () => {
   it("finds the monorepo root from nested package paths", () => {
+    const repoRoot = path.resolve("repo", "OpenAgentGraphPro");
     const exists = (target: string) =>
-      target.endsWith("C:\\repo\\OpenAgentGraphPro\\package.json") ||
-      target.endsWith("C:\\repo\\OpenAgentGraphPro\\packages\\backend\\package.json");
+      target === path.join(repoRoot, "package.json") ||
+      target === path.join(repoRoot, "packages", "backend", "package.json");
 
     expect(
-      findMonorepoRoot("C:\\repo\\OpenAgentGraphPro\\packages\\backend\\src\\cli", exists)
-    ).toBe("C:\\repo\\OpenAgentGraphPro");
+      findMonorepoRoot(path.join(repoRoot, "packages", "backend", "src", "cli"), exists)
+    ).toBe(repoRoot);
   });
 
   it("requires Node 20.19 or newer", () => {
