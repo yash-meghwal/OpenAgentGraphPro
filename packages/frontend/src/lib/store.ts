@@ -141,6 +141,7 @@ const ACTOR_STORAGE_KEY = "openagentgraph:actor-id";
 const AUTH_TOKEN_STORAGE_KEY = "openagentgraph:auth-token";
 const ONBOARDING_STORAGE_KEY = "openagentgraph:onboarding-dismissed";
 const FIRST_RUN_WIZARD_STORAGE_KEY = "openagentgraph:first-run-wizard-completed";
+const ACTIVE_TASK_GUIDE_STORAGE_KEY = "openagentgraph:active-task-guide-dismissed";
 const AVAILABLE_ACTORS: ActorIdentity[] = [
   { actorId: "viewer", displayName: "Viewer", role: "viewer" },
   { actorId: "operator", displayName: "Operator", role: "operator" },
@@ -222,6 +223,20 @@ function writeAuthToken(token: string) {
 function readOnboardingDismissed(): boolean {
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
+}
+
+function readActiveTaskGuideDismissed(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(ACTIVE_TASK_GUIDE_STORAGE_KEY) === "true";
+}
+
+function writeActiveTaskGuideDismissed(value: boolean) {
+  if (typeof window === "undefined") return;
+  if (value) {
+    window.localStorage.setItem(ACTIVE_TASK_GUIDE_STORAGE_KEY, "true");
+    return;
+  }
+  window.localStorage.removeItem(ACTIVE_TASK_GUIDE_STORAGE_KEY);
 }
 
 function readFirstRunWizardCompleted(): boolean {
@@ -624,6 +639,9 @@ interface AppState {
   onboardingDismissed: boolean;
   firstRunWizardCompleted: boolean;
   createDialogOpen: boolean;
+  activeTaskGuideDismissed: boolean;
+  activeTaskStartHint: boolean;
+  runWorkspaceRoot: string;
   runtimeStatus: "connected" | "degraded" | "read_only" | "auth_required" | "unreachable";
   runtimeMessage: string;
   backendReadyStatus: DiagnosticsStatus | "unknown";
@@ -817,6 +835,11 @@ interface AppState {
   completeFirstRunWizard: () => void;
   resetFirstRunWizard: () => void;
   setCreateDialogOpen: (open: boolean) => void;
+  dismissActiveTaskGuide: () => void;
+  resetActiveTaskGuide: () => void;
+  setActiveTaskStartHint: (value: boolean) => void;
+  clearActiveTaskStartHint: () => void;
+  setRunWorkspaceRoot: (value: string) => void;
   setDashboardFilter: (value: DashboardFilter) => void;
   setDashboardSort: (value: DashboardSort) => void;
   setDashboardQuery: (value: string) => void;
@@ -848,6 +871,9 @@ export const useStore = create<AppState>((set, get) => ({
   onboardingDismissed: readOnboardingDismissed(),
   firstRunWizardCompleted: readFirstRunWizardCompleted(),
   createDialogOpen: false,
+  activeTaskGuideDismissed: readActiveTaskGuideDismissed(),
+  activeTaskStartHint: false,
+  runWorkspaceRoot: "",
   runtimeStatus: frontendRuntimeConfig.valid ? "read_only" : "unreachable",
   runtimeMessage: frontendRuntimeConfig.message ?? "",
   backendReadyStatus: "unknown",
@@ -2134,6 +2160,17 @@ export const useStore = create<AppState>((set, get) => ({
     set({ firstRunWizardCompleted: false });
   },
   setCreateDialogOpen: (open) => set({ createDialogOpen: open }),
+  dismissActiveTaskGuide: () => {
+    writeActiveTaskGuideDismissed(true);
+    set({ activeTaskGuideDismissed: true, activeTaskStartHint: false });
+  },
+  resetActiveTaskGuide: () => {
+    writeActiveTaskGuideDismissed(false);
+    set({ activeTaskGuideDismissed: false });
+  },
+  setActiveTaskStartHint: (value) => set({ activeTaskStartHint: value }),
+  clearActiveTaskStartHint: () => set({ activeTaskStartHint: false }),
+  setRunWorkspaceRoot: (value) => set({ runWorkspaceRoot: value }),
   setDashboardFilter: (value) => set({ dashboardFilter: value }),
   setDashboardSort: (value) => set({ dashboardSort: value }),
   setDashboardQuery: (value) => set({ dashboardQuery: value }),

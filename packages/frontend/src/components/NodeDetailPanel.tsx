@@ -1,7 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toPlainEnglishFailureSummary, toPlainEnglishSummary } from "@openagentgraph/shared";
 import { useStore } from "../lib/store.js";
-import { getNodeDisplaySummary, getNodeStatusCopy } from "../lib/viewMode.js";
+import { getSimpleNodeStatusLabel } from "../lib/activeTaskGuide.js";
+import { getActiveNode, getNextNode, getNodeDisplaySummary, getNodeStatusCopy } from "../lib/viewMode.js";
 
 const PANEL: React.CSSProperties = {
   width: 380,
@@ -66,6 +67,7 @@ export function NodeDetailPanel() {
     retryNode,
     replanNode,
     annotateNode,
+    selectNode,
     uiMode,
     needsHumanReview,
     humanReviewReason,
@@ -79,6 +81,13 @@ export function NodeDetailPanel() {
   const [annotationText, setAnnotationText] = useState("");
   const [tab, setTab] = useState<"summary" | "developer">("summary");
   const [agentContextCopyMessage, setAgentContextCopyMessage] = useState("");
+
+  useEffect(() => {
+    if (selectedNodeId || nodes.length === 0) return;
+    const target = getActiveNode(nodes) ?? getNextNode(nodes);
+    if (!target) return;
+    selectNode(target.id);
+  }, [nodes, selectedNodeId, selectNode]);
 
   const node = nodes.find((candidate) => candidate.id === selectedNodeId);
 
@@ -94,15 +103,67 @@ export function NodeDetailPanel() {
   }, [node, nodes, edges, events]);
 
   if (!node || !ancestry) {
+    const hasNodes = nodes.length > 0;
+    const suggested = hasNodes ? getActiveNode(nodes) ?? getNextNode(nodes) : null;
+
     return (
-      <div style={{ ...PANEL, alignItems: "center", justifyContent: "center" }}>
-        <p style={{ color: "#4a5568", fontSize: 13 }}>Select a step to inspect.</p>
+      <div
+        style={{
+          ...PANEL,
+          alignItems: "center",
+          justifyContent: "center",
+          padding: 24,
+          textAlign: "center",
+        }}
+      >
+        {hasNodes ? (
+          <>
+            <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
+              {uiMode === "default" ? "Pick a step on the graph" : "Select a step to inspect"}
+            </p>
+            <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.5, marginBottom: suggested && uiMode === "default" ? 16 : 0 }}>
+              {uiMode === "default"
+                ? "Click any glowing step to read a plain-English summary of what it means."
+                : "Choose a node on the graph to open its detail panel."}
+            </p>
+            {suggested && uiMode === "default" ? (
+              <button
+                type="button"
+                onClick={() => selectNode(suggested.id)}
+                style={{
+                  background: "#2563eb",
+                  color: "#eff6ff",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "10px 14px",
+                  cursor: "pointer",
+                  fontSize: 13,
+                  fontWeight: 700,
+                }}
+              >
+                Show {suggested.title}
+              </button>
+            ) : null}
+          </>
+        ) : (
+          <>
+            <p style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 700, marginBottom: 8 }}>
+              {uiMode === "default" ? "Steps will appear here" : "No step selected"}
+            </p>
+            <p style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.5 }}>
+              {uiMode === "default"
+                ? "Set your folder and click Run. As work starts, each step's story will show up in this panel."
+                : "Select a step to inspect."}
+            </p>
+          </>
+        )}
       </div>
     );
   }
 
   const defaultSummary = getNodeDisplaySummary(node);
   const statusCopy = getNodeStatusCopy(node);
+  const statusLabel = uiMode === "default" ? getSimpleNodeStatusLabel(node) : statusCopy;
   const selectedAgentContext =
     agentContext?.graphId === activeGraphId && agentContext.selectedNode?.nodeId === node.id
       ? agentContext
@@ -127,7 +188,7 @@ export function NodeDetailPanel() {
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
         <div>
           <p style={SECTION_TITLE}>Status</p>
-          <div style={CARD}>{statusCopy}</div>
+          <div style={CARD}>{statusLabel}</div>
         </div>
         <div>
           <p style={SECTION_TITLE}>Expected Outcome</p>
@@ -582,7 +643,7 @@ export function NodeDetailPanel() {
         <div style={{ display: "flex", gap: 8, marginBottom: 8, alignItems: "center" }}>
           <span style={BADGE("#4a5568")}>{node.kind}</span>
           <span style={BADGE(node.status === "completed" ? "#38a169" : node.status === "failed" ? "#e53e3e" : "#2b6cb0")}>
-            {statusCopy}
+            {statusLabel}
           </span>
         </div>
         <h2 style={{ fontSize: 15, fontWeight: 700, color: "#e2e8f0", marginBottom: 4 }}>{node.title}</h2>

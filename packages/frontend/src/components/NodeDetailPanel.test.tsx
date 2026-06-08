@@ -152,4 +152,92 @@ describe("NodeDetailPanel", () => {
     expect(writeText).toHaveBeenCalledWith(expect.stringContaining("\"graphId\": \"graph-1\""));
     expect(JSON.stringify(renderer!.toJSON())).toContain("Context JSON copied.");
   });
+
+  it("auto-selects the active or next step and shows plain status labels in simple mode", async () => {
+    const selectNode = vi.fn();
+    const runningNode = { ...makeNode("node-running"), status: "running" as const, title: "Current work" };
+    const readyNode = { ...makeNode("node-ready"), status: "ready" as const, title: "Next work" };
+
+    useStore.setState({
+      activeGraphId: "graph-1",
+      nodes: [readyNode, runningNode],
+      edges: [],
+      selectedNodeId: null,
+      events: [],
+      currentActor: { actorId: "operator", displayName: "Operator", role: "operator" },
+      capabilities: null,
+      agentContext: null,
+      agentCollaborationLoading: false,
+      agentCollaborationError: "",
+      agentCollaborationMessage: "",
+      loadAgentContext: vi.fn(),
+      retryNode: vi.fn(),
+      replanNode: vi.fn(),
+      annotateNode: vi.fn(),
+      selectNode,
+      uiMode: "default",
+      needsHumanReview: false,
+      humanReviewReason: "",
+      waitingForApproval: false,
+      latestDecisionSummary: "",
+      lineageSummary: "",
+      lineageDescriptors: [],
+    });
+
+    await act(async () => {
+      TestRenderer.create(<NodeDetailPanel />);
+    });
+
+    expect(selectNode).toHaveBeenCalledWith("node-running");
+
+    useStore.setState({
+      nodes: [readyNode],
+      selectedNodeId: "node-ready",
+    });
+
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(<NodeDetailPanel />);
+    });
+
+    expect(JSON.stringify(renderer!.toJSON())).toContain("Ready");
+    expect(JSON.stringify(renderer!.toJSON())).not.toContain("On track");
+  });
+
+  it("shows a first-run empty state before any steps exist", async () => {
+    useStore.setState({
+      activeGraphId: "graph-1",
+      nodes: [],
+      edges: [],
+      selectedNodeId: null,
+      events: [],
+      currentActor: { actorId: "operator", displayName: "Operator", role: "operator" },
+      capabilities: null,
+      agentContext: null,
+      agentCollaborationLoading: false,
+      agentCollaborationError: "",
+      agentCollaborationMessage: "",
+      loadAgentContext: vi.fn(),
+      retryNode: vi.fn(),
+      replanNode: vi.fn(),
+      annotateNode: vi.fn(),
+      selectNode: vi.fn(),
+      uiMode: "default",
+      needsHumanReview: false,
+      humanReviewReason: "",
+      waitingForApproval: false,
+      latestDecisionSummary: "",
+      lineageSummary: "",
+      lineageDescriptors: [],
+    });
+
+    let renderer: TestRenderer.ReactTestRenderer;
+    await act(async () => {
+      renderer = TestRenderer.create(<NodeDetailPanel />);
+    });
+
+    const markup = JSON.stringify(renderer!.toJSON());
+    expect(markup).toContain("Steps will appear here");
+    expect(markup).toContain("click Run");
+  });
 });

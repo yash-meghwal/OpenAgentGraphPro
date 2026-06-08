@@ -10,6 +10,7 @@ export function FirstRunWizard() {
     openGraph,
     configureProvider,
     completeFirstRunWizard,
+    setActiveTaskStartHint,
     setCreateDialogOpen,
     setCurrentView,
     providerConfigSaving,
@@ -76,6 +77,7 @@ export function FirstRunWizard() {
 
   async function handleFinish() {
     completeFirstRunWizard();
+    setActiveTaskStartHint(true);
     if (createdGraphId) {
       await openGraph(createdGraphId);
       setCurrentView("graph");
@@ -230,7 +232,7 @@ export function FirstRunWizard() {
 
         {step === 3 ? (
           <div style={{ color: "#cbd5e0", fontSize: 14, lineHeight: 1.55 }}>
-            Your project is ready on the Home tab. Open <strong>Active task</strong> when you want to run work, review steps, and approve decisions.
+            You are heading to <strong>Active task</strong>. Set your project folder if needed, click <strong>Run</strong>, then click steps on the graph to read what each one means.
           </div>
         ) : null}
 

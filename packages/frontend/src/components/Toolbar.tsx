@@ -468,6 +468,8 @@ export function Toolbar() {
     clearAuthToken,
     createDialogOpen,
     setCreateDialogOpen,
+    setRunWorkspaceRoot,
+    clearActiveTaskStartHint,
   } = useStore();
 
   const [showAuthPanel, setShowAuthPanel] = useState(false);
@@ -484,6 +486,10 @@ export function Toolbar() {
   useEffect(() => {
     setAuthTokenInput(authToken);
   }, [authToken]);
+
+  useEffect(() => {
+    setRunWorkspaceRoot(readStoredWorkspaceRoot());
+  }, [setRunWorkspaceRoot]);
 
   const allBranches = [...new Set(nodes.filter((n) => n.branchId).map((n) => n.branchId!))];
   const allStatuses = ["pending", "ready", "running", "completed", "failed", "superseded", "blocked"];
@@ -541,11 +547,13 @@ export function Toolbar() {
   const handleRun = async () => {
     const normalizedWorkspaceRoot = normalizeRunWorkspaceRoot(workspaceRoot);
     if (!activeGraphId || goalRunReadiness.disabled || !normalizedWorkspaceRoot) return;
+    clearActiveTaskStartHint();
     await startRun(activeGraphId, normalizedWorkspaceRoot);
   };
 
   const handleWorkspaceRootChange = (value: string) => {
     setWorkspaceRoot(value);
+    setRunWorkspaceRoot(value);
     writeStoredWorkspaceRoot(value);
     const current = useStore.getState();
     if (
@@ -1269,10 +1277,10 @@ export function Toolbar() {
           <>
             <input
               ref={workspaceInputRef}
-              aria-label="Workspace path"
+              aria-label={uiMode === "developer" ? "Workspace path" : "Your project folder"}
               value={workspaceRoot}
               onChange={(event) => handleWorkspaceRootChange(event.target.value)}
-              placeholder="Workspace path..."
+              placeholder={uiMode === "developer" ? "Workspace path..." : "Your project folder..."}
               style={{
                 ...CONTROL_STYLE,
                 background: "#0f1117",

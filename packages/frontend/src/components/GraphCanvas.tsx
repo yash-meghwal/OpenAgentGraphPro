@@ -10,6 +10,7 @@ import {
 } from "three";
 import type { Edge, Node } from "@openagentgraph/shared";
 import { useStore } from "../lib/store.js";
+import { SIMPLE_GRAPH_LEGEND } from "../lib/activeTaskGuide.js";
 import { getActiveNode, getNodeDisplaySummary } from "../lib/viewMode.js";
 import { buildPresentedGraph } from "../lib/graphPresentation.js";
 import { deriveGraphRuntime } from "../lib/graphRuntime.js";
@@ -458,7 +459,17 @@ export function GraphCanvas() {
           }}
         >
           <div style={{ color: "#90cdf4", fontSize: 10, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 4 }}>
-            {labeledNode.id === activeNode?.id ? "Active frontier" : labeledNode.id === selectedNodeId ? "Selected node" : "Hovered node"}
+            {uiMode === "developer"
+              ? labeledNode.id === activeNode?.id
+                ? "Active frontier"
+                : labeledNode.id === selectedNodeId
+                  ? "Selected node"
+                  : "Hovered node"
+              : labeledNode.id === activeNode?.id
+                ? "Current step"
+                : labeledNode.id === selectedNodeId
+                  ? "Selected step"
+                  : "Step preview"}
           </div>
           <div style={{ color: "#e2e8f0", marginBottom: 4, fontWeight: 700 }}>{labeledNode.title}</div>
           <div>{getNodeDisplaySummary(labeledNode)}</div>
@@ -473,56 +484,97 @@ export function GraphCanvas() {
         </div>
       ) : null}
 
-      <div
-        style={{
-          position: "absolute",
-          inset: "auto auto 20px 16px",
-          background: "rgba(17, 24, 39, 0.94)",
-          border: "1px solid #2d3748",
-          borderRadius: 12,
-          padding: "12px 14px",
-          fontSize: 11,
-          display: "grid",
-          gap: 4,
-          color: "#a0aec0",
-          maxWidth: 310,
-          boxShadow: "0 14px 30px rgba(0,0,0,0.22)",
-        }}
-      >
-        <div style={{ color: "#718096", fontWeight: 700 }}>3D graph</div>
-        <div>Visible now: {graphData.nodes.length} nodes</div>
-        <div>Quality: {effectiveGraphQuality}</div>
+      {uiMode === "default" ? (
         <div
           role="group"
-          aria-label="Execution graph theme"
-          style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 4 }}
+          aria-label="Step legend"
+          style={{
+            position: "absolute",
+            inset: "auto auto 20px 16px",
+            background: "rgba(17, 24, 39, 0.94)",
+            border: "1px solid #2d3748",
+            borderRadius: 12,
+            padding: "12px 14px",
+            fontSize: 11,
+            display: "grid",
+            gap: 6,
+            color: "#a0aec0",
+            maxWidth: 280,
+            boxShadow: "0 14px 30px rgba(0,0,0,0.22)",
+          }}
         >
-          {GRAPH_THEME_OPTIONS.map((theme) => (
-            <button
-              key={theme.id}
-              type="button"
-              aria-pressed={graphThemeId === theme.id}
-              title={theme.description}
-              onClick={() => setGraphThemeId(theme.id)}
-              style={{
-                background: graphThemeId === theme.id ? "#1e3a5f" : "#0f172a",
-                border: `1px solid ${graphThemeId === theme.id ? graphTheme.active : "#334155"}`,
-                borderRadius: 8,
-                color: graphThemeId === theme.id ? "#dbeafe" : "#cbd5e1",
-                cursor: "pointer",
-                fontSize: 10,
-                fontWeight: 900,
-                padding: "5px 7px",
-              }}
-            >
-              {theme.label}
-            </button>
+          <div style={{ color: "#e2e8f0", fontWeight: 800 }}>Step colors</div>
+          <div style={{ color: "#94a3b8", lineHeight: 1.45 }}>
+            Click a step to read what it means in the panel on the right.
+          </div>
+          {SIMPLE_GRAPH_LEGEND.map((item) => (
+            <div key={item.status} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 999,
+                  background: graphTheme.executionStatus[item.status] ?? "#64748b",
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ color: "#e2e8f0", fontWeight: 700, minWidth: 54 }}>{item.label}</span>
+              <span style={{ color: "#94a3b8" }}>{item.description}</span>
+            </div>
           ))}
         </div>
-        {derivedGraphRuntime.statusMessage ? <div>{derivedGraphRuntime.statusMessage}</div> : null}
-        <div>Focus active path: {String(focusActivePath)}</div>
-        <div>{driftSummary || "The graph will summarize drift once evaluated work appears."}</div>
-      </div>
+      ) : (
+        <div
+          style={{
+            position: "absolute",
+            inset: "auto auto 20px 16px",
+            background: "rgba(17, 24, 39, 0.94)",
+            border: "1px solid #2d3748",
+            borderRadius: 12,
+            padding: "12px 14px",
+            fontSize: 11,
+            display: "grid",
+            gap: 4,
+            color: "#a0aec0",
+            maxWidth: 310,
+            boxShadow: "0 14px 30px rgba(0,0,0,0.22)",
+          }}
+        >
+          <div style={{ color: "#718096", fontWeight: 700 }}>3D graph</div>
+          <div>Visible now: {graphData.nodes.length} nodes</div>
+          <div>Quality: {effectiveGraphQuality}</div>
+          <div
+            role="group"
+            aria-label="Execution graph theme"
+            style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 4 }}
+          >
+            {GRAPH_THEME_OPTIONS.map((theme) => (
+              <button
+                key={theme.id}
+                type="button"
+                aria-pressed={graphThemeId === theme.id}
+                title={theme.description}
+                onClick={() => setGraphThemeId(theme.id)}
+                style={{
+                  background: graphThemeId === theme.id ? "#1e3a5f" : "#0f172a",
+                  border: `1px solid ${graphThemeId === theme.id ? graphTheme.active : "#334155"}`,
+                  borderRadius: 8,
+                  color: graphThemeId === theme.id ? "#dbeafe" : "#cbd5e1",
+                  cursor: "pointer",
+                  fontSize: 10,
+                  fontWeight: 900,
+                  padding: "5px 7px",
+                }}
+              >
+                {theme.label}
+              </button>
+            ))}
+          </div>
+          {derivedGraphRuntime.statusMessage ? <div>{derivedGraphRuntime.statusMessage}</div> : null}
+          <div>Focus active path: {String(focusActivePath)}</div>
+          <div>{driftSummary || "The graph will summarize drift once evaluated work appears."}</div>
+        </div>
+      )}
     </div>
   );
 }

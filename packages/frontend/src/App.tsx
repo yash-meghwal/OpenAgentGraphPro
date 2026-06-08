@@ -2,6 +2,7 @@ import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode
 import { Toolbar } from "./components/Toolbar.js";
 import { NodeDetailPanel } from "./components/NodeDetailPanel.js";
 import { RunTimeline } from "./components/RunTimeline.js";
+import { ActiveTaskGuide } from "./components/ActiveTaskGuide.js";
 import { DashboardView } from "./components/DashboardView.js";
 import { useStore } from "./lib/store.js";
 import { getRuntimeBannerTone } from "./lib/productCopy.js";
@@ -278,7 +279,7 @@ export function App() {
         </Suspense>
       ) : (
         <>
-          <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+          <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
             {graphError ? (
               <GraphUnavailableState
                 uiMode={uiMode}
@@ -296,6 +297,7 @@ export function App() {
               </GraphErrorBoundary>
             )}
             <NodeDetailPanel />
+            <ActiveTaskGuide />
           </div>
           {activeGraphId ? <RunTimeline /> : null}
         </>
