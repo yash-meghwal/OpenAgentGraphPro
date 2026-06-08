@@ -25,6 +25,7 @@ import {
   getRuntimeBannerTone,
 } from "../lib/productCopy.js";
 import type { ProductGraphHandoffResult } from "../lib/productGraphApi.js";
+import { SupervisorHomeCard } from "./SupervisorHomeCard.js";
 
 const severityColor = {
   critical: "#fc8181",
@@ -1128,6 +1129,25 @@ export function DashboardView() {
         gap: 16,
       }}
     >
+      {mostUrgentRun ? (
+        <SupervisorHomeCard
+          focusRun={mostUrgentRun}
+          allRuns={dashboard}
+          frontier={agentFrontierGraphId === mostUrgentRun.graphId ? agentFrontier : []}
+          frontierSummary={
+            agentFrontierGraphId === mostUrgentRun.graphId ? agentFrontierSummary : null
+          }
+          proposals={agentPlanProposals.filter((proposal) => proposal.graphId === mostUrgentRun.graphId)}
+          dashboardSummary={dashboardSummary}
+          uiMode={uiMode}
+          canManage={canConfigureProvider}
+          loading={agentCollaborationLoading}
+          onOpenGraph={openGraph}
+          onAcceptProposal={acceptAgentPlanProposal}
+          onDismissProposal={dismissAgentPlanProposal}
+        />
+      ) : null}
+
       <div
         style={{
           display: "grid",
@@ -1202,23 +1222,25 @@ export function DashboardView() {
         onClear={clearRuntimeProviderConfig}
       />
 
-      <AgentCollaborationCard
-        graphId={agentHubGraphId}
-        frontier={agentFrontier}
-        summary={agentFrontierSummary}
-        activity={agentActivity}
-        proposals={agentPlanProposals}
-        context={agentContext}
-        loading={agentCollaborationLoading}
-        error={agentCollaborationError}
-        message={agentCollaborationMessage}
-        canManage={canConfigureProvider}
-        uiMode={uiMode}
-        onLoadContext={loadAgentContext}
-        onAcceptProposal={acceptAgentPlanProposal}
-        onDismissProposal={dismissAgentPlanProposal}
-        onOpenGraph={openGraph}
-      />
+      {uiMode === "developer" ? (
+        <AgentCollaborationCard
+          graphId={agentHubGraphId}
+          frontier={agentFrontier}
+          summary={agentFrontierSummary}
+          activity={agentActivity}
+          proposals={agentPlanProposals}
+          context={agentContext}
+          loading={agentCollaborationLoading}
+          error={agentCollaborationError}
+          message={agentCollaborationMessage}
+          canManage={canConfigureProvider}
+          uiMode={uiMode}
+          onLoadContext={loadAgentContext}
+          onAcceptProposal={acceptAgentPlanProposal}
+          onDismissProposal={dismissAgentPlanProposal}
+          onOpenGraph={openGraph}
+        />
+      ) : null}
 
       {runtimeMessage && runtimeStatus !== "connected" ? (
         <div

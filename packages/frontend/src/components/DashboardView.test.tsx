@@ -745,11 +745,105 @@ describe("DashboardView empty states", () => {
     });
 
     const markup = JSON.stringify(renderer!.toJSON());
-    expect(markup).toContain("Other assistants reporting in");
-    expect(markup).toContain("Suggestions to review");
-    expect(markup).toContain("Suggestions");
+    expect(markup).toContain("What needs you now?");
+    expect(markup).toContain("Waiting for you");
+    expect(markup).toContain("Suggestions waiting for you");
+    expect(markup).toContain("Add welcome checklist");
+    expect(markup).toContain("Accept suggestion");
+    expect(markup).not.toContain("Other assistants reporting in");
     expect(markup).not.toContain("Agent-ready work");
     expect(markup).not.toContain("Open proposals");
+  });
+
+  it("renders supervisor home with next action, preview, queue, and status", () => {
+    useStore.setState({
+      dashboard: [
+        {
+          graphId: "graph-1",
+          goalTitle: "Ship onboarding",
+          lifecycleBucket: "active",
+          graphStatus: "running",
+          runControlState: "running",
+          frontierStatus: "on_track",
+          needsHumanReview: false,
+          approvalState: "requested",
+          waitingForApproval: true,
+          latestDecisionSummary: "Approve the welcome email step.",
+          alertCount: 0,
+          completedNodeCount: 2,
+          plannedNodeCount: 5,
+          passRate: 1,
+          revisionRate: 0,
+          evidenceCoverageRate: 0.8,
+          lastEventAt: "2026-06-04T00:00:00.000Z",
+          lastEventSequence: 3,
+          attentionScore: 120,
+          attentionLabel: "urgent",
+          latestNotificationSummary: "Welcome email draft is ready for approval.",
+        },
+      ],
+      dashboardSummary: {
+        urgentRunCount: 1,
+        needsReviewCount: 0,
+        blockedRunCount: 0,
+        activeRunCount: 1,
+        archivedRunCount: 0,
+      },
+      dashboardLoading: false,
+      onboardingDismissed: true,
+      runtimeStatus: "connected",
+      sessionLifecycle: "signed_in",
+      authMode: "dev_header",
+      currentActor: { actorId: "operator", displayName: "Operator", role: "operator" },
+      agentFrontierGraphId: "graph-1",
+      agentFrontierSummary: {
+        runControlState: "running",
+        frontierStatus: "on_track",
+        readyCount: 1,
+        runningCount: 0,
+        blockedCount: 0,
+        openProposalCount: 0,
+      },
+      agentFrontier: [
+        {
+          nodeId: "node-1",
+          title: "Draft welcome email",
+          kind: "work",
+          status: "ready",
+          humanSummary: "Write the first-run welcome email.",
+          dependsOnNodeIds: [],
+          updatedAt: "2026-06-04T00:00:00.000Z",
+        },
+      ],
+      agentPlanProposals: [],
+      agentCollaborationLoading: false,
+      productGraphHandoff: null,
+      productGraphHandoffLoading: false,
+      productGraphHandoffError: "",
+      fetchGraphs: async () => undefined,
+      loadProductGraphHandoff: async () => useStore.getState().productGraphHandoff!,
+      loadProviderStatus: async () => ({
+        configured: false,
+        provider: "unset",
+        source: "unset",
+        message: "AI provider is not configured.",
+      }),
+      uiMode: "default",
+    });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(<DashboardView />);
+    });
+
+    const markup = JSON.stringify(renderer!.toJSON());
+    expect(markup).toContain("What needs you now?");
+    expect(markup).toContain("A step needs your approval");
+    expect(markup).toContain("Review and approve");
+    expect(markup).toContain("Draft welcome email");
+    expect(markup).toContain("Project status");
+    expect(markup).toContain("Ship onboarding");
+    expect(markup).toContain("Approve the welcome email step.");
   });
 
   it("renders agent coordination empty and error states", () => {
