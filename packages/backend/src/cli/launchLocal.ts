@@ -10,6 +10,7 @@ import {
   MINIMUM_NODE_VERSION,
   parseLaunchArgs,
   resolveLaunchUrls,
+  resolveSpawnInvocation,
   shouldCopyEnvExample,
   shouldInstallDependencies,
 } from "./launchLocalCore.js";
@@ -25,15 +26,9 @@ function exists(target: string) {
   }
 }
 
-function resolveSpawnCommand(command: string): string {
-  if (process.platform !== "win32") return command;
-  if (command === "npm") return "npm.cmd";
-  if (command === "cmd") return "cmd.exe";
-  return command;
-}
-
 function spawnProcess(command: string, args: string[], cwd: string) {
-  return spawn(resolveSpawnCommand(command), args, {
+  const invocation = resolveSpawnInvocation(command, args, process.platform);
+  return spawn(invocation.command, invocation.args, {
     cwd,
     stdio: "inherit",
     shell: false,

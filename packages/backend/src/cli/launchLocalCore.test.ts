@@ -6,6 +6,7 @@ import {
   isNodeVersionSupported,
   parseLaunchArgs,
   resolveLaunchUrls,
+  resolveSpawnInvocation,
   shouldCopyEnvExample,
   shouldInstallDependencies,
 } from "./launchLocalCore.js";
@@ -53,6 +54,26 @@ describe("launchLocalCore", () => {
     expect(buildFrontendCheckUrls("4173", { OPENAGENTGRAPH_FRONTEND_HOST: "127.0.0.1" })).toEqual([
       "http://127.0.0.1:4173",
     ]);
+  });
+
+  it("wraps Windows npm spawns with cmd.exe /d /s /c", () => {
+    expect(resolveSpawnInvocation("npm", ["run", "dev"], "win32")).toEqual({
+      command: "cmd.exe",
+      args: ["/d", "/s", "/c", "npm", "run", "dev"],
+    });
+    expect(resolveSpawnInvocation("npm", ["ci"], "linux")).toEqual({
+      command: "npm",
+      args: ["ci"],
+    });
+  });
+
+  it("wraps Windows cmd spawns without shell:true", () => {
+    expect(
+      resolveSpawnInvocation("cmd", ["/c", "start", "", "http://localhost:5173"], "win32")
+    ).toEqual({
+      command: "cmd.exe",
+      args: ["/d", "/s", "/c", "start", "", "http://localhost:5173"],
+    });
   });
 
   it("builds platform-specific browser open commands", () => {

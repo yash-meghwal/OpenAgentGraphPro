@@ -83,6 +83,33 @@ export function resolveLaunchUrls(env: NodeJS.ProcessEnv): LaunchUrls {
   };
 }
 
+export function resolveSpawnInvocation(
+  command: string,
+  args: string[],
+  platform: NodeJS.Platform
+): { command: string; args: string[] } {
+  if (platform !== "win32") {
+    return { command, args };
+  }
+
+  if (command === "npm") {
+    return {
+      command: "cmd.exe",
+      args: ["/d", "/s", "/c", "npm", ...args],
+    };
+  }
+
+  if (command === "cmd") {
+    const cmdArgs = args[0] === "/c" ? args.slice(1) : args;
+    return {
+      command: "cmd.exe",
+      args: ["/d", "/s", "/c", ...cmdArgs],
+    };
+  }
+
+  return { command, args };
+}
+
 export function buildBrowserOpenCommand(
   url: string,
   platform: NodeJS.Platform
