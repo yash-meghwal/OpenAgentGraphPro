@@ -9,6 +9,7 @@ export type LaunchUrls = {
   frontendPort: string;
   backendUrl: string;
   frontendUrl: string;
+  frontendCheckUrls: string[];
   readyUrl: string;
   healthUrl: string;
 };
@@ -49,16 +50,34 @@ export function isNodeVersionSupported(version: string): boolean {
   return minor >= MINIMUM_NODE_VERSION.minor;
 }
 
+export function buildFrontendCheckUrls(
+  frontendPort: string,
+  env: NodeJS.ProcessEnv = {}
+): string[] {
+  const explicitHost = env.OPENAGENTGRAPH_FRONTEND_HOST?.trim();
+  if (explicitHost) {
+    const host = explicitHost.replace(/^https?:\/\//, "").replace(/\/$/, "");
+    return [`http://${host}:${frontendPort}`];
+  }
+
+  return [
+    `http://localhost:${frontendPort}`,
+    `http://127.0.0.1:${frontendPort}`,
+    `http://[::1]:${frontendPort}`,
+  ];
+}
+
 export function resolveLaunchUrls(env: NodeJS.ProcessEnv): LaunchUrls {
   const backendPort = env.PORT?.trim() || DEFAULT_BACKEND_PORT;
   const frontendPort = env.OPENAGENTGRAPH_FRONTEND_PORT?.trim() || DEFAULT_FRONTEND_PORT;
+  const frontendCheckUrls = buildFrontendCheckUrls(frontendPort, env);
   const backendUrl = `http://127.0.0.1:${backendPort}`;
-  const frontendUrl = `http://127.0.0.1:${frontendPort}`;
   return {
     backendPort,
     frontendPort,
     backendUrl,
-    frontendUrl,
+    frontendUrl: frontendCheckUrls[0]!,
+    frontendCheckUrls,
     readyUrl: `${backendUrl}/ready`,
     healthUrl: `${backendUrl}/health`,
   };

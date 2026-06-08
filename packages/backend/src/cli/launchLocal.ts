@@ -25,14 +25,26 @@ function exists(target: string) {
   }
 }
 
+function resolveSpawnCommand(command: string): string {
+  if (process.platform !== "win32") return command;
+  if (command === "npm") return "npm.cmd";
+  if (command === "cmd") return "cmd.exe";
+  return command;
+}
+
+function spawnProcess(command: string, args: string[], cwd: string) {
+  return spawn(resolveSpawnCommand(command), args, {
+    cwd,
+    stdio: "inherit",
+    shell: false,
+    windowsHide: true,
+    env: process.env,
+  });
+}
+
 function runCommand(command: string, args: string[], cwd: string): Promise<number> {
   return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      cwd,
-      stdio: "inherit",
-      shell: process.platform === "win32",
-      env: process.env,
-    });
+    const child = spawnProcess(command, args, cwd);
     child.on("error", reject);
     child.on("exit", (code) => resolve(code ?? 1));
   });
@@ -49,6 +61,25 @@ async function waitForHttpOk(url: string, attempts = 120, delayMs = 500): Promis
     await new Promise((resolve) => setTimeout(resolve, delayMs));
   }
   return false;
+}
+
+async function waitForAnyHttpOk(
+  urls: string[],
+  attempts = 120,
+  delayMs = 500
+): Promise<string | null> {
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    for (const url of urls) {
+      try {
+        const response = await fetch(url, { method: "GET" });
+        if (response.ok) return url;
+      } catch {
+        // Try the next candidate host on this attempt.
+      }
+    }
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+  return null;
 }
 
 async function openBrowser(url: string) {
@@ -109,27 +140,22 @@ async function main() {
 
   const urls = resolveLaunchUrls(process.env);
   console.log("Starting OpenAgentGraph Pro (backend + frontend)...");
-  const devProcess = spawn("npm", ["run", "dev"], {
-    cwd: repoRoot,
-    stdio: "inherit",
-    shell: process.platform === "win32",
-    env: process.env,
-  });
+  const devProcess = spawnProcess("npm", ["run", "dev"], repoRoot);
   attachShutdown(devProcess);
 
   const backendReady = await waitForHttpOk(urls.readyUrl);
-  const frontendReady = await waitForHttpOk(urls.frontendUrl);
-  if (!backendReady || !frontendReady) {
+  const frontendReadyUrl = await waitForAnyHttpOk(urls.frontendCheckUrls);
+  if (!backendReady || !frontendReadyUrl) {
     console.error("OpenAgentGraph did not become ready in time.");
     console.error(`Backend ready check: ${urls.readyUrl}`);
-    console.error(`Frontend check: ${urls.frontendUrl}`);
+    console.error(`Frontend checks: ${urls.frontendCheckUrls.join(", ")}`);
     devProcess.kill("SIGTERM");
     process.exit(1);
   }
 
-  console.log(`OpenAgentGraph is ready at ${urls.frontendUrl}`);
+  console.log(`OpenAgentGraph is ready at ${frontendReadyUrl}`);
   if (args.openBrowser) {
-    await openBrowser(urls.frontendUrl);
+    await openBrowser(frontendReadyUrl);
   }
 
   const exitCode = await new Promise<number>((resolve) => {

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBrowserOpenCommand,
+  buildFrontendCheckUrls,
   findMonorepoRoot,
   isNodeVersionSupported,
   parseLaunchArgs,
@@ -32,10 +33,26 @@ describe("launchLocalCore", () => {
       backendPort: "3001",
       frontendPort: "5173",
       backendUrl: "http://127.0.0.1:3001",
-      frontendUrl: "http://127.0.0.1:5173",
+      frontendUrl: "http://localhost:5173",
+      frontendCheckUrls: [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://[::1]:5173",
+      ],
       readyUrl: "http://127.0.0.1:3001/ready",
       healthUrl: "http://127.0.0.1:3001/health",
     });
+  });
+
+  it("prefers localhost and falls back to loopback hosts for frontend readiness", () => {
+    expect(buildFrontendCheckUrls("5173")).toEqual([
+      "http://localhost:5173",
+      "http://127.0.0.1:5173",
+      "http://[::1]:5173",
+    ]);
+    expect(buildFrontendCheckUrls("4173", { OPENAGENTGRAPH_FRONTEND_HOST: "127.0.0.1" })).toEqual([
+      "http://127.0.0.1:4173",
+    ]);
   });
 
   it("builds platform-specific browser open commands", () => {
