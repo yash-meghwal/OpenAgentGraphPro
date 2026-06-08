@@ -1314,6 +1314,11 @@ export const useStore = create<AppState>((set, get) => ({
 
     const overview: DashboardOverview = await res.json();
     set((state) => {
+      const canAutoOpenSingleGraph =
+        state.firstRunWizardCompleted &&
+        overview.items.length <= 1 &&
+        !!overview.items[0] &&
+        !state.dashboardQuery.trim();
       const nextView =
         state.currentView === "project"
           ? "project"
@@ -1321,9 +1326,9 @@ export const useStore = create<AppState>((set, get) => ({
             ? "intent"
           : state.currentView === "graph" && state.activeGraphId
           ? "graph"
-          : state.currentView === "dashboard"
+          : state.currentView === "dashboard" || !state.firstRunWizardCompleted
             ? "dashboard"
-            : overview.items.length <= 1 && overview.items[0] && !state.dashboardQuery.trim()
+            : canAutoOpenSingleGraph
             ? "graph"
             : "dashboard";
 
@@ -1338,6 +1343,7 @@ export const useStore = create<AppState>((set, get) => ({
     const activeGraphId = get().activeGraphId;
     const currentView = get().currentView;
     if (
+      get().firstRunWizardCompleted &&
       currentView !== "project" &&
       currentView !== "intent" &&
       !activeGraphId &&

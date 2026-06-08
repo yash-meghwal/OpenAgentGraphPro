@@ -1948,6 +1948,46 @@ describe("store viewed state", () => {
     expect(state.productGraphTraceError).toBe("Product graph node was not found.");
   });
 
+  it("stays on Home during the first-run wizard instead of auto-opening the only run", async () => {
+    useStore.setState({
+      activeGraphId: null,
+      currentView: "dashboard",
+      firstRunWizardCompleted: false,
+      dashboardQuery: "",
+      dashboardLifecycle: "all",
+      dashboardAttention: "all",
+      dashboardStatus: "all",
+    });
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/graphs?")) {
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            schemaVersion: "1",
+            items: [{ graphId: "graph-1" }],
+            summary: {
+              urgentRunCount: 0,
+              needsReviewCount: 0,
+              blockedRunCount: 0,
+              activeRunCount: 1,
+              archivedRunCount: 0,
+            },
+          }),
+        } as Response;
+      }
+      throw new Error(`Unexpected fetch: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await useStore.getState().fetchGraphs();
+
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(useStore.getState().currentView).toBe("dashboard");
+    expect(useStore.getState().activeGraphId).toBeNull();
+  });
+
   it("keeps the intent graph view active when the dashboard has one run", async () => {
     useStore.setState({
       activeGraphId: null,
