@@ -797,7 +797,8 @@ interface AppState {
     goal: string,
     constraints?: string,
     successCriteria?: string[],
-    forbiddenScope?: string[]
+    forbiddenScope?: string[],
+    options?: { navigateToGraph?: boolean }
   ) => Promise<Graph>;
   loadGraph: (graphId: string) => Promise<void>;
   startRun: (graphId: string, workspaceRoot: string) => Promise<void>;
@@ -1828,7 +1829,8 @@ export const useStore = create<AppState>((set, get) => ({
     }
   },
 
-  createGraph: async (title, goal, constraints, successCriteria, forbiddenScope) => {
+  createGraph: async (title, goal, constraints, successCriteria, forbiddenScope, options) => {
+    const navigateToGraph = options?.navigateToGraph ?? true;
     const res = await apiFetch(apiUrl("/graphs"), {
       method: "POST",
       body: JSON.stringify({ title, goal, constraints, successCriteria, forbiddenScope }),
@@ -1838,7 +1840,10 @@ export const useStore = create<AppState>((set, get) => ({
       token: get().authToken,
     });
     const graph: Graph = await res.json();
-    set((state) => ({ graphs: mergeGraph(state.graphs, graph), currentView: "graph" }));
+    set((state) => ({
+      graphs: mergeGraph(state.graphs, graph),
+      ...(navigateToGraph ? { currentView: "graph" as const } : {}),
+    }));
     return graph;
   },
 

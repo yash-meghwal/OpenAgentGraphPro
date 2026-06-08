@@ -51,13 +51,17 @@ export const TOOLBAR_LAYOUT_CSS = `
 .toolbar-primary,
 .toolbar-actions,
 .toolbar-trailing,
+.toolbar-graph-run,
+.toolbar-graph-meta,
 .toolbar-segment {
   min-width: 0;
 }
 
 .toolbar-primary,
 .toolbar-actions,
-.toolbar-trailing {
+.toolbar-trailing,
+.toolbar-graph-run,
+.toolbar-graph-meta {
   flex-wrap: wrap;
 }
 
@@ -69,6 +73,28 @@ export const TOOLBAR_LAYOUT_CSS = `
   white-space: nowrap;
 }
 
+.toolbar-graph-run {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+}
+
+.toolbar-graph-run input[type="text"] {
+  flex: 1 1 160px;
+  min-width: 0;
+  max-width: 280px;
+}
+
+.toolbar-graph-meta {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  row-gap: 8px;
+}
+
 @media (max-width: 900px) {
   .app-toolbar {
     grid-template-columns: 1fr;
@@ -77,12 +103,20 @@ export const TOOLBAR_LAYOUT_CSS = `
 
   .toolbar-primary,
   .toolbar-actions,
-  .toolbar-trailing {
+  .toolbar-trailing,
+  .toolbar-graph-run,
+  .toolbar-graph-meta {
     width: 100%;
   }
 
-  .toolbar-trailing {
+  .toolbar-trailing,
+  .toolbar-graph-run,
+  .toolbar-graph-meta {
     justify-content: flex-start;
+  }
+
+  .toolbar-graph-run input[type="text"] {
+    max-width: 100%;
   }
 }
 
@@ -105,8 +139,9 @@ export const TOOLBAR_LAYOUT_CSS = `
     max-width: 100%;
   }
 
-  .toolbar-trailing button {
-    flex: 1 1 150px;
+  .toolbar-trailing button,
+  .toolbar-graph-run button {
+    flex: 1 1 140px;
   }
 }
 `;
@@ -471,6 +506,7 @@ export function Toolbar() {
     setCreateDialogOpen,
     setRunWorkspaceRoot,
     clearActiveTaskStartHint,
+    activeTaskStartHint,
   } = useStore();
 
   const [showAuthPanel, setShowAuthPanel] = useState(false);
@@ -533,6 +569,15 @@ export function Toolbar() {
     runControlState,
     providerExecutionBlocked: runtimeFallbackLikely,
   });
+  const compactGraphToolbar =
+    uiMode === "default" &&
+    activeTaskStartHint &&
+    !waitingForApproval &&
+    !needsHumanReview;
+  const showGraphMetaRow =
+    currentView === "graph" &&
+    activeGraphId &&
+    (uiMode === "developer" || waitingForApproval || needsHumanReview);
 
   const handleCreate = async () => {
     if (!title || !goal) return;
@@ -963,24 +1008,38 @@ export function Toolbar() {
                 </>
               ) : null}
               <span>{toolbarStatusSummary}</span>
-              <span>
-                Now:
-                {" "}
-                {activeNode ? getNodeDisplaySummary(activeNode) : "No active step"}
-              </span>
-              <span>
-                Just finished:
-                {" "}
-                {justFinishedNode ? getNodeDisplaySummary(justFinishedNode) : "Nothing completed yet"}
-              </span>
-              <span>
-                Next:
-                {" "}
-                {nextNode
-                  ? `${nextNode.title} (${uiMode === "developer" ? getNodeStatusCopy(nextNode) : getSimpleNodeStatusLabel(nextNode)})`
-                  : "No pending step"}
-              </span>
-              <span>{runHealthSummary || `${completedNodeCount} of ${plannedNodeCount} steps completed.`}</span>
+              {uiMode === "developer" ? (
+                <>
+                  <span>
+                    Now:
+                    {" "}
+                    {activeNode ? getNodeDisplaySummary(activeNode) : "No active step"}
+                  </span>
+                  <span>
+                    Just finished:
+                    {" "}
+                    {justFinishedNode ? getNodeDisplaySummary(justFinishedNode) : "Nothing completed yet"}
+                  </span>
+                  <span>
+                    Next:
+                    {" "}
+                    {nextNode
+                      ? `${nextNode.title} (${getNodeStatusCopy(nextNode)})`
+                      : "No pending step"}
+                  </span>
+                </>
+              ) : compactGraphToolbar ? (
+                <span>{runHealthSummary || `${completedNodeCount} of ${plannedNodeCount} steps completed.`}</span>
+              ) : (
+                <>
+                  <span>
+                    Now:
+                    {" "}
+                    {activeNode ? getNodeDisplaySummary(activeNode) : "No active step"}
+                  </span>
+                  <span>{runHealthSummary || `${completedNodeCount} of ${plannedNodeCount} steps completed.`}</span>
+                </>
+              )}
             </>
           )}
         </div>
@@ -1220,170 +1279,168 @@ export function Toolbar() {
           </>
         ) : null}
 
-        {currentView === "graph" && activeGraphId ? (
-          <>
-            <button
-              onClick={() => setActivityOpen(!activityOpen)}
-              style={{
-                background:
-                  alerts[0]?.severity === "critical"
-                    ? "#742a2a"
-                    : changesSinceLastViewed?.newEventCount
-                      ? "#2c5282"
-                      : "#2d3748",
-                color: "#e2e8f0",
-                border: "1px solid #4a5568",
-                borderRadius: 6,
-                padding: "6px 10px",
-                cursor: "pointer",
-                fontSize: 11,
-              }}
-            >
-              {changesSinceLastViewed?.newEventCount
-                ? `Updates (${changesSinceLastViewed.newEventCount})`
-                : alerts.length > 0
-                  ? "Activity"
-                  : "Inbox"}
-            </button>
-            <button
-              onClick={handleCopyReport}
-              style={{
-                background: "#2d3748",
-                color: "#e2e8f0",
-                border: "1px solid #4a5568",
-                borderRadius: 6,
-                padding: "6px 10px",
-                cursor: "pointer",
-                fontSize: 11,
-              }}
-            >
-              Copy report
-            </button>
-            <button
-              onClick={handleDownloadJson}
-              style={{
-                background: "#2d3748",
-                color: "#e2e8f0",
-                border: "1px solid #4a5568",
-                borderRadius: 6,
-                padding: "6px 10px",
-                cursor: "pointer",
-                fontSize: 11,
-              }}
-            >
-              Download JSON
-            </button>
-          </>
-        ) : null}
-
-        {currentView === "graph" && activeGraphId && (
-          <>
-            <input
-              ref={workspaceInputRef}
-              aria-label={uiMode === "developer" ? "Workspace path" : "Your project folder"}
-              value={workspaceRoot}
-              onChange={(event) => handleWorkspaceRootChange(event.target.value)}
-              placeholder={uiMode === "developer" ? "Workspace path..." : "Your project folder..."}
-              style={{
-                ...CONTROL_STYLE,
-                background: "#0f1117",
-                width: 200,
-              }}
-            />
-            <button
-              onClick={handleRun}
-              disabled={goalRunReadiness.disabled}
-              title={goalRunReadiness.message || undefined}
-              style={{
-                background: "#276749",
-                color: "#fff",
-                border: "none",
-                borderRadius: 6,
-                padding: "6px 14px",
-                cursor: goalRunReadiness.disabled ? "not-allowed" : "pointer",
-                fontSize: 12,
-                fontWeight: 700,
-                opacity: goalRunReadiness.disabled ? 0.7 : 1,
-              }}
-            >
-              {isRunning ? "Running…" : "Run"}
-            </button>
-            <button onClick={handlePause} disabled={!canPause} style={CONTROL_STYLE}>
-              {uiMode === "default" ? "Pause run" : "Pause"}
-            </button>
-            <button onClick={handleResume} disabled={!canResume} style={CONTROL_STYLE}>
-              {uiMode === "default" ? "Resume run" : "Resume"}
-            </button>
-            <button onClick={handleStop} disabled={!canStop} style={CONTROL_STYLE}>
-              {uiMode === "default" ? "Stop after this step" : "Stop"}
-            </button>
-            <button onClick={handleReview} disabled={!capabilities?.canRequestReview} style={CONTROL_STYLE}>
-              Mark for review
-            </button>
-            <button
-              onClick={async () => {
-                if (!activeGraphId) return;
-                await requestApproval(activeGraphId, {
-                  reason: latestDecisionSummary || "Human approval requested before the next step.",
-                });
-              }}
-              disabled={!capabilities?.canRequestApproval}
-              style={CONTROL_STYLE}
-            >
-              Request approval
-            </button>
-            <button
-              onClick={async () => {
-                if (!activeGraphId) return;
-                await approveRun(activeGraphId, {});
-              }}
-              disabled={!capabilities?.canApprove}
-              style={CONTROL_STYLE}
-            >
-              Approve
-            </button>
-            <button
-              onClick={async () => {
-                if (!activeGraphId) return;
-                await rejectRun(activeGraphId, {});
-              }}
-              disabled={!capabilities?.canReject}
-              style={CONTROL_STYLE}
-            >
-              Reject
-            </button>
-            <button
-              onClick={async () => {
-                if (!activeGraphId) return;
-                await continueRun(activeGraphId, {});
-              }}
-              disabled={!capabilities?.canContinue}
-              style={CONTROL_STYLE}
-            >
-              Continue
-            </button>
-            <GoalRunReadinessNotice
-              message={goalRunReadiness.message}
-              isRunning={isRunning}
-              workspaceMissing={goalRunReadiness.workspaceMissing}
-              providerBlocked={goalRunReadiness.providerBlocked}
-              providerRefreshLoading={runtimeLoading || providerRefreshPending}
-              providerRefreshNotice={providerRefreshNotice}
-              onFocusWorkspace={() => workspaceInputRef.current?.focus()}
-              onCopyProviderSetupGuidePath={() => void handleCopyProviderSetupGuidePath()}
-              onRefreshProviderReadiness={() => void handleRefreshProviderReadiness()}
-            />
-          </>
-        )}
       </div>
       {currentView === "graph" && activeGraphId ? (
+        <div className="toolbar-graph-run">
+          <button
+            onClick={() => setActivityOpen(!activityOpen)}
+            style={{
+              background:
+                alerts[0]?.severity === "critical"
+                  ? "#742a2a"
+                  : changesSinceLastViewed?.newEventCount
+                    ? "#2c5282"
+                    : "#2d3748",
+              color: "#e2e8f0",
+              border: "1px solid #4a5568",
+              borderRadius: 6,
+              padding: "6px 10px",
+              cursor: "pointer",
+              fontSize: 11,
+            }}
+          >
+            {changesSinceLastViewed?.newEventCount
+              ? `Updates (${changesSinceLastViewed.newEventCount})`
+              : alerts.length > 0
+                ? "Activity"
+                : "Inbox"}
+          </button>
+          {uiMode === "developer" ? (
+            <>
+              <button
+                onClick={handleCopyReport}
+                style={{
+                  background: "#2d3748",
+                  color: "#e2e8f0",
+                  border: "1px solid #4a5568",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  cursor: "pointer",
+                  fontSize: 11,
+                }}
+              >
+                Copy report
+              </button>
+              <button
+                onClick={handleDownloadJson}
+                style={{
+                  background: "#2d3748",
+                  color: "#e2e8f0",
+                  border: "1px solid #4a5568",
+                  borderRadius: 6,
+                  padding: "6px 10px",
+                  cursor: "pointer",
+                  fontSize: 11,
+                }}
+              >
+                Download JSON
+              </button>
+            </>
+          ) : null}
+          <input
+            ref={workspaceInputRef}
+            aria-label={uiMode === "developer" ? "Workspace path" : "Your project folder"}
+            value={workspaceRoot}
+            onChange={(event) => handleWorkspaceRootChange(event.target.value)}
+            placeholder={uiMode === "developer" ? "Workspace path..." : "Your project folder..."}
+            style={{
+              ...CONTROL_STYLE,
+              background: "#0f1117",
+            }}
+          />
+          <button
+            onClick={handleRun}
+            disabled={goalRunReadiness.disabled}
+            title={goalRunReadiness.message || undefined}
+            style={{
+              background: "#276749",
+              color: "#fff",
+              border: "none",
+              borderRadius: 6,
+              padding: "6px 14px",
+              cursor: goalRunReadiness.disabled ? "not-allowed" : "pointer",
+              fontSize: 12,
+              fontWeight: 700,
+              opacity: goalRunReadiness.disabled ? 0.7 : 1,
+            }}
+          >
+            {isRunning ? "Running…" : "Run"}
+          </button>
+          {!compactGraphToolbar ? (
+            <>
+              <button onClick={handlePause} disabled={!canPause} style={CONTROL_STYLE}>
+                {uiMode === "default" ? "Pause run" : "Pause"}
+              </button>
+              <button onClick={handleResume} disabled={!canResume} style={CONTROL_STYLE}>
+                {uiMode === "default" ? "Resume run" : "Resume"}
+              </button>
+              <button onClick={handleStop} disabled={!canStop} style={CONTROL_STYLE}>
+                {uiMode === "default" ? "Stop after this step" : "Stop"}
+              </button>
+              <button onClick={handleReview} disabled={!capabilities?.canRequestReview} style={CONTROL_STYLE}>
+                Mark for review
+              </button>
+              <button
+                onClick={async () => {
+                  if (!activeGraphId) return;
+                  await requestApproval(activeGraphId, {
+                    reason: latestDecisionSummary || "Human approval requested before the next step.",
+                  });
+                }}
+                disabled={!capabilities?.canRequestApproval}
+                style={CONTROL_STYLE}
+              >
+                Request approval
+              </button>
+              <button
+                onClick={async () => {
+                  if (!activeGraphId) return;
+                  await approveRun(activeGraphId, {});
+                }}
+                disabled={!capabilities?.canApprove}
+                style={CONTROL_STYLE}
+              >
+                Approve
+              </button>
+              <button
+                onClick={async () => {
+                  if (!activeGraphId) return;
+                  await rejectRun(activeGraphId, {});
+                }}
+                disabled={!capabilities?.canReject}
+                style={CONTROL_STYLE}
+              >
+                Reject
+              </button>
+              <button
+                onClick={async () => {
+                  if (!activeGraphId) return;
+                  await continueRun(activeGraphId, {});
+                }}
+                disabled={!capabilities?.canContinue}
+                style={CONTROL_STYLE}
+              >
+                Continue
+              </button>
+            </>
+          ) : null}
+          <GoalRunReadinessNotice
+            message={goalRunReadiness.message}
+            isRunning={isRunning}
+            workspaceMissing={goalRunReadiness.workspaceMissing}
+            providerBlocked={goalRunReadiness.providerBlocked}
+            providerRefreshLoading={runtimeLoading || providerRefreshPending}
+            providerRefreshNotice={providerRefreshNotice}
+            onFocusWorkspace={() => workspaceInputRef.current?.focus()}
+            onCopyProviderSetupGuidePath={() => void handleCopyProviderSetupGuidePath()}
+            onRefreshProviderReadiness={() => void handleRefreshProviderReadiness()}
+          />
+        </div>
+      ) : null}
+      {showGraphMetaRow ? (
         <div
+          className="toolbar-graph-meta"
           style={{
-            gridColumn: "1 / -1",
-            display: "flex",
-            gap: 8,
-            alignItems: "center",
-            flexWrap: "wrap",
             color: "#a0aec0",
             fontSize: 11,
           }}

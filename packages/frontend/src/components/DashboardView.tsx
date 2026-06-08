@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FirstRunWizard } from "./FirstRunWizard.js";
+
 import type { FormEvent } from "react";
 import type {
   AgentActivityRecord,
@@ -894,7 +894,6 @@ export function DashboardView() {
     configureProvider,
     clearRuntimeProviderConfig,
     dismissOnboarding,
-    firstRunWizardCompleted,
     setCreateDialogOpen,
     openGraph,
     loadSimilarRuns,
@@ -991,16 +990,8 @@ export function DashboardView() {
     );
   }
 
-  const showFirstRunWizard =
-    !firstRunWizardCompleted &&
-    dashboard.length === 0 &&
-    runtimeStatus !== "unreachable" &&
-    sessionLifecycle === "signed_in";
-
   if (dashboard.length === 0) {
     return (
-      <>
-      {showFirstRunWizard ? <FirstRunWizard /> : null}
       <div
         style={{
           flex: 1,
@@ -1120,7 +1111,6 @@ export function DashboardView() {
           ) : null}
         </div>
       </div>
-      </>
     );
   }
 

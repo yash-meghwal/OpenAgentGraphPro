@@ -36,7 +36,9 @@ export function FirstRunWizard() {
     setBusy(true);
     setMessage("");
     try {
-      const graph = await createGraph(title.trim(), goal.trim());
+      const graph = await createGraph(title.trim(), goal.trim(), undefined, undefined, undefined, {
+        navigateToGraph: false,
+      });
       await fetchGraphs();
       setCreatedGraphId(graph.id);
       setStep(2);

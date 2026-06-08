@@ -4,6 +4,7 @@ import { NodeDetailPanel } from "./components/NodeDetailPanel.js";
 import { RunTimeline } from "./components/RunTimeline.js";
 import { ActiveTaskGuide } from "./components/ActiveTaskGuide.js";
 import { DashboardView } from "./components/DashboardView.js";
+import { FirstRunWizard } from "./components/FirstRunWizard.js";
 import { useStore } from "./lib/store.js";
 import { getRuntimeBannerTone } from "./lib/productCopy.js";
 import { getProductGraphPreviewProjection, PRODUCT_GRAPH_PREVIEW_MESSAGE } from "./lib/productGraphPreview.js";
@@ -214,6 +215,8 @@ export function App() {
     runtimeStatus,
     runtimeMessage,
     runtimeHealthSummary,
+    firstRunWizardCompleted,
+    sessionLifecycle,
   } = useStore();
 
   const runtimeTone = getRuntimeBannerTone(runtimeStatus);
@@ -221,6 +224,11 @@ export function App() {
   const [graphError, setGraphError] = useState<string | null>(null);
   const [graphRetryKey, setGraphRetryKey] = useState(0);
   const productGraphPreview = useMemo(() => getProductGraphPreviewProjection(), []);
+  const showFirstRunWizard =
+    !firstRunWizardCompleted &&
+    runtimeStatus !== "unreachable" &&
+    sessionLifecycle === "signed_in" &&
+    !productGraphPreview;
 
   useEffect(() => {
     if (!shouldRunAppBootRequests(productGraphPreview)) {
@@ -248,6 +256,7 @@ export function App() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {showFirstRunWizard ? <FirstRunWizard /> : null}
       <Toolbar />
       {runtimeMessage ? (
         <div

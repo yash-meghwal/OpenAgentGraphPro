@@ -122,6 +122,8 @@ describe("App lazy graph boundary", () => {
     expect(TOOLBAR_LAYOUT_CSS).toContain("@media (max-width: 900px)");
     expect(TOOLBAR_LAYOUT_CSS).toContain(".app-toolbar");
     expect(TOOLBAR_LAYOUT_CSS).toContain("grid-template-columns: 1fr");
+    expect(TOOLBAR_LAYOUT_CSS).toContain(".toolbar-graph-run");
+    expect(TOOLBAR_LAYOUT_CSS).toContain("grid-column: 1 / -1");
   });
 
   it("explains when a goal run needs workspace and provider setup before execution", () => {
