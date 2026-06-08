@@ -645,6 +645,113 @@ describe("DashboardView empty states", () => {
     expect(viewerDismissReason?.props.disabled).toBe(true);
   });
 
+  it("renders simple-mode assistant labels on the coordination card", () => {
+    useStore.setState({
+      dashboard: [
+        {
+          graphId: "graph-1",
+          goalTitle: "Ship onboarding",
+          lifecycleBucket: "active",
+          graphStatus: "running",
+          runControlState: "running",
+          frontierStatus: "on_track",
+          needsHumanReview: false,
+          approvalState: "not_requested",
+          waitingForApproval: false,
+          alertCount: 0,
+          completedNodeCount: 0,
+          plannedNodeCount: 1,
+          passRate: 0,
+          revisionRate: 0,
+          evidenceCoverageRate: 0,
+          lastEventAt: "2026-06-04T00:00:00.000Z",
+          lastEventSequence: 1,
+          attentionScore: 40,
+          attentionLabel: "medium",
+        },
+      ],
+      dashboardSummary: {
+        urgentRunCount: 0,
+        needsReviewCount: 0,
+        blockedRunCount: 0,
+        activeRunCount: 1,
+        archivedRunCount: 0,
+      },
+      dashboardLoading: false,
+      onboardingDismissed: true,
+      runtimeStatus: "connected",
+      sessionLifecycle: "signed_in",
+      authMode: "dev_header",
+      currentActor: { actorId: "operator", displayName: "Operator", role: "operator" },
+      agentFrontierGraphId: "graph-1",
+      agentFrontierSummary: {
+        runControlState: "running",
+        frontierStatus: "on_track",
+        readyCount: 1,
+        runningCount: 0,
+        blockedCount: 0,
+        openProposalCount: 1,
+      },
+      agentFrontier: [
+        {
+          nodeId: "node-1",
+          title: "Draft onboarding copy",
+          kind: "work",
+          status: "ready",
+          humanSummary: "Write the first-run welcome text.",
+          dependsOnNodeIds: [],
+          updatedAt: "2026-06-04T00:00:00.000Z",
+        },
+      ],
+      agentActivity: [],
+      agentPlanProposals: [
+        {
+          proposalId: "proposal-1",
+          graphId: "graph-1",
+          createdAt: "2026-06-04T00:02:00.000Z",
+          agent: { agentId: "gemini", displayName: "Gemini", kind: "gemini" },
+          title: "Add welcome checklist",
+          summary: "Propose a short checklist for first-time users.",
+          nodes: [{ title: "Write checklist", intent: "Cover the first-run path." }],
+        },
+      ],
+      agentCollaborationLoading: false,
+      agentCollaborationError: "",
+      productGraphHandoff: null,
+      productGraphHandoffLoading: false,
+      productGraphHandoffError: "",
+      fetchGraphs: async () => undefined,
+      loadProductGraphHandoff: async () => useStore.getState().productGraphHandoff!,
+      loadProviderStatus: async () => ({
+        configured: false,
+        provider: "unset",
+        source: "unset",
+        message: "AI provider is not configured.",
+      }),
+      loadAgentFrontier: async () => ({
+        graphId: "graph-1",
+        generatedAt: "2026-06-04T00:00:00.000Z",
+        summary: useStore.getState().agentFrontierSummary!,
+        frontier: useStore.getState().agentFrontier,
+        recentAgentActivity: [],
+        planProposals: useStore.getState().agentPlanProposals,
+      }),
+      uiMode: "default",
+    });
+
+    let renderer: TestRenderer.ReactTestRenderer | undefined;
+    act(() => {
+      renderer = TestRenderer.create(<DashboardView />);
+    });
+
+    const markup = JSON.stringify(renderer!.toJSON());
+    expect(markup).toContain("Other assistants reporting in");
+    expect(markup).toContain("Suggestions to review");
+    expect(markup).toContain("Suggestions");
+    expect(markup).not.toContain("Agent-ready work");
+    expect(markup).not.toContain("Open proposals");
+  });
+
   it("renders agent coordination empty and error states", () => {
     useStore.setState({
       dashboard: [

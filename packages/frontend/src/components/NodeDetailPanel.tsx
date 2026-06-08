@@ -3,6 +3,7 @@ import { toPlainEnglishFailureSummary, toPlainEnglishSummary } from "@openagentg
 import { useStore } from "../lib/store.js";
 import { getSimpleNodeStatusLabel } from "../lib/activeTaskGuide.js";
 import { getActiveNode, getNextNode, getNodeDisplaySummary, getNodeStatusCopy } from "../lib/viewMode.js";
+import { CollapsibleTechnicalSection } from "./CollapsibleTechnicalSection.js";
 
 const PANEL: React.CSSProperties = {
   width: 380,
@@ -229,10 +230,9 @@ export function NodeDetailPanel() {
       ) : null}
 
       {node.lineageSummary || lineageSummary ? (
-        <div>
-          <p style={SECTION_TITLE}>System Lineage</p>
+        <CollapsibleTechnicalSection title="System lineage">
           <div style={CARD}>{node.lineageSummary || lineageSummary}</div>
-        </div>
+        </CollapsibleTechnicalSection>
       ) : null}
 
       {node.status === "failed" || evaluation?.passed === false ? (
@@ -252,18 +252,16 @@ export function NodeDetailPanel() {
         </div>
       </div>
 
-      <div>
-        <p style={SECTION_TITLE}>Evidence</p>
+      <CollapsibleTechnicalSection title="Evidence">
         <div style={CARD}>
           {toPlainEnglishSummary(
             node.evidenceSummary,
             "A plain-English evidence summary is not available for this step yet."
           )}
         </div>
-      </div>
+      </CollapsibleTechnicalSection>
 
-      <div>
-        <p style={SECTION_TITLE}>Agent Context Pack</p>
+      <CollapsibleTechnicalSection title="Assistant context">
         <div style={{ ...CARD, display: "grid", gap: 8 }}>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <button
@@ -330,10 +328,10 @@ export function NodeDetailPanel() {
             <div style={{ color: "#34d399", fontSize: 12 }}>{agentContextCopyMessage || agentCollaborationMessage}</div>
           ) : null}
         </div>
-      </div>
+      </CollapsibleTechnicalSection>
 
       <div>
-        <p style={SECTION_TITLE}>Annotations</p>
+        <p style={SECTION_TITLE}>Notes</p>
         <div style={{ display: "grid", gap: 8 }}>
           {node.annotations?.length ? (
             node.annotations
@@ -398,8 +396,7 @@ export function NodeDetailPanel() {
         </div>
       </div>
 
-      <div>
-        <p style={SECTION_TITLE}>Next Control</p>
+      <CollapsibleTechnicalSection title="Advanced controls" toggleLabel="Show advanced controls">
         <div style={{ display: "grid", gap: 8 }}>
           <button
             onClick={() => retryNode(node.id)}
@@ -468,7 +465,7 @@ export function NodeDetailPanel() {
             Branch from this step
           </button>
         </div>
-      </div>
+      </CollapsibleTechnicalSection>
     </div>
   );
 

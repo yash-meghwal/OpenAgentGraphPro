@@ -637,7 +637,7 @@ function AgentCollaborationCard({
   const [dismissReasons, setDismissReasons] = useState<Record<string, string>>({});
   return (
     <section
-      aria-label="Agent collaboration"
+      aria-label={uiMode === "developer" ? "Agent collaboration" : "Other assistants reporting in"}
       style={{
         background: "#111827",
         border: "1px solid #263244",
@@ -653,7 +653,7 @@ function AgentCollaborationCard({
             {uiMode === "developer" ? "Agent coordination" : "Other assistants"}
           </div>
           <div style={{ color: "#e2e8f0", fontSize: 16, fontWeight: 800 }}>
-            {uiMode === "developer" ? "Agent-ready work" : "Assistants reporting in"}
+            {uiMode === "developer" ? "Agent-ready work" : "Other assistants reporting in"}
           </div>
           <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.45 }}>
             {uiMode === "developer"
@@ -703,7 +703,7 @@ function AgentCollaborationCard({
             ["Ready", summary.readyCount],
             ["Running", summary.runningCount],
             ["Blocked", summary.blockedCount],
-            ["Proposals", summary.openProposalCount],
+            [uiMode === "developer" ? "Proposals" : "Suggestions", summary.openProposalCount],
           ].map(([label, value]) => (
             <div key={label} style={{ border: "1px solid #263244", borderRadius: 8, padding: 10 }}>
               <div style={{ color: "#718096", fontSize: 10, fontWeight: 800, textTransform: "uppercase" }}>{label}</div>
@@ -750,7 +750,9 @@ function AgentCollaborationCard({
 
       {proposals.length > 0 ? (
         <div style={{ display: "grid", gap: 8 }}>
-          <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>Open proposals</div>
+          <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 800 }}>
+            {uiMode === "developer" ? "Open proposals" : "Suggestions to review"}
+          </div>
           {proposals.slice(0, 3).map((proposal) => {
             const title = safeAgentDisplayText(proposal.title, 160);
             const summary = safeAgentDisplayText(proposal.summary, 500);

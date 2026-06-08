@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useStore } from "../lib/store.js";
+import { ProjectTemplatePicker } from "./ProjectTemplatePicker.js";
 
 type WizardStep = 1 | 2 | 3;
 
@@ -25,6 +26,7 @@ export function FirstRunWizard() {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [createdGraphId, setCreatedGraphId] = useState<string | null>(null);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   const canManage = currentActor.role === "operator" || currentActor.role === "admin";
 
@@ -138,6 +140,14 @@ export function FirstRunWizard() {
             <div style={{ color: "#94a3b8", fontSize: 13, lineHeight: 1.5 }}>
               Give your project a name and describe the outcome you want. You stay in control — approve each step as work progresses.
             </div>
+            <ProjectTemplatePicker
+              selectedId={selectedTemplateId}
+              onSelect={(templateId, nextTitle, nextGoal) => {
+                setSelectedTemplateId(templateId);
+                setTitle(nextTitle);
+                setGoal(nextGoal);
+              }}
+            />
             <label style={{ display: "grid", gap: 4, color: "#cbd5e0", fontSize: 11, fontWeight: 700 }}>
               Project name
               <input

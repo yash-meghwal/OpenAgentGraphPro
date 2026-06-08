@@ -13,6 +13,8 @@ import {
   getRuntimeBannerTone,
 } from "../lib/productCopy.js";
 import { deriveGraphRuntime } from "../lib/graphRuntime.js";
+import { ProjectTemplatePicker } from "./ProjectTemplatePicker.js";
+import { ContextualTipBanner } from "./ContextualTipBanner.js";
 import { getSimpleNodeStatusLabel } from "../lib/activeTaskGuide.js";
 import {
   getActiveNode,
@@ -512,6 +514,7 @@ export function Toolbar() {
   const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
   const [constraints, setConstraints] = useState("");
   const [workspaceRoot, setWorkspaceRoot] = useState(() => readStoredWorkspaceRoot());
   const [annotationText, setAnnotationText] = useState("");
@@ -588,6 +591,7 @@ export function Toolbar() {
     setTitle("");
     setGoal("");
     setConstraints("");
+    setSelectedTemplateId(null);
   };
 
   const handleRun = async () => {
@@ -1074,6 +1078,9 @@ export function Toolbar() {
           >
             {humanReviewReason || "This run may need a human decision before it continues."}
           </div>
+        ) : null}
+        {currentView === "graph" && waitingForApproval ? (
+          <ContextualTipBanner tipId="first_approval" visible />
         ) : null}
         {currentView === "graph" && (waitingForApproval || latestDecisionSummary) ? (
           <div
@@ -1563,6 +1570,14 @@ export function Toolbar() {
             }}
           >
             <h2 style={{ color: "#e2e8f0", fontSize: 16, fontWeight: 700 }}>New Project</h2>
+            <ProjectTemplatePicker
+              selectedId={selectedTemplateId}
+              onSelect={(templateId, nextTitle, nextGoal) => {
+                setSelectedTemplateId(templateId);
+                setTitle(nextTitle);
+                setGoal(nextGoal);
+              }}
+            />
             {[
               { label: "Title", value: title, onChange: setTitle, placeholder: "e.g. Build auth module" },
               { label: "Goal", value: goal, onChange: setGoal, placeholder: "Describe the task in full..." },

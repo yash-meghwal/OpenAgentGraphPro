@@ -125,6 +125,15 @@ describe("NodeDetailPanel", () => {
       renderer = TestRenderer.create(<NodeDetailPanel />);
     });
 
+    const expandTechnicalButtons = renderer!.root
+      .findAllByType("button")
+      .filter((button) => buttonText(button.props.children) === "Show technical details");
+    for (const button of expandTechnicalButtons) {
+      act(() => {
+        button.props.onClick();
+      });
+    }
+
     const loadButton = renderer!.root
       .findAllByType("button")
       .find((button) => buttonText(button.props.children) === "Load context");
@@ -136,7 +145,7 @@ describe("NodeDetailPanel", () => {
 
     expect(loadAgentContext).toHaveBeenCalledWith("graph-1", "node-1");
     const loadedMarkup = JSON.stringify(renderer!.toJSON());
-    expect(loadedMarkup).toContain("Agent Context Pack");
+    expect(loadedMarkup).toContain("Assistant context");
     expect(loadedMarkup).toContain("selectedNode");
     expect(loadedMarkup).toContain("Context pack loaded.");
 

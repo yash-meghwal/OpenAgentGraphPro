@@ -5,6 +5,7 @@ import { RunTimeline } from "./components/RunTimeline.js";
 import { ActiveTaskGuide } from "./components/ActiveTaskGuide.js";
 import { DashboardView } from "./components/DashboardView.js";
 import { FirstRunWizard } from "./components/FirstRunWizard.js";
+import { ContextualTipBanner } from "./components/ContextualTipBanner.js";
 import { useStore } from "./lib/store.js";
 import { getRuntimeBannerTone } from "./lib/productCopy.js";
 import { getProductGraphPreviewProjection, PRODUCT_GRAPH_PREVIEW_MESSAGE } from "./lib/productGraphPreview.js";
@@ -217,6 +218,7 @@ export function App() {
     runtimeHealthSummary,
     firstRunWizardCompleted,
     sessionLifecycle,
+    nodes,
   } = useStore();
 
   const runtimeTone = getRuntimeBannerTone(runtimeStatus);
@@ -289,6 +291,11 @@ export function App() {
       ) : (
         <>
           <div style={{ flex: 1, display: "flex", overflow: "hidden", position: "relative" }}>
+            {nodes.length > 0 ? (
+              <div style={{ position: "absolute", left: 16, bottom: 16, zIndex: 15, width: "min(360px, calc(100% - 32px))" }}>
+                <ContextualTipBanner tipId="first_graph" visible />
+              </div>
+            ) : null}
             {graphError ? (
               <GraphUnavailableState
                 uiMode={uiMode}

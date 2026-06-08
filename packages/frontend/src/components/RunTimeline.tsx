@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { CollapsibleTechnicalSection } from "./CollapsibleTechnicalSection.js";
 import { useStore } from "../lib/store.js";
 import { buildFrontendReplayFrame } from "../lib/replay.js";
 import { getSimpleNodeStatusLabel } from "../lib/activeTaskGuide.js";
@@ -111,26 +112,51 @@ export function RunTimeline() {
           </div>
         </div>
 
-        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-          <button style={BUTTON_STYLE} onClick={() => setReplayStep(0)}>
-            First
-          </button>
-          <button
-            style={BUTTON_STYLE}
-            onClick={() => setReplayStep(Math.max(activeStep - 1, 0))}
-          >
-            Previous
-          </button>
-          <button
-            style={BUTTON_STYLE}
-            onClick={() => setReplayStep(Math.min(activeStep + 1, events.length))}
-          >
-            Next
-          </button>
-          <button style={BUTTON_STYLE} onClick={() => setReplayStep(events.length)}>
-            Latest
-          </button>
-        </div>
+        {uiMode === "developer" ? (
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button style={BUTTON_STYLE} onClick={() => setReplayStep(0)}>
+              First
+            </button>
+            <button
+              style={BUTTON_STYLE}
+              onClick={() => setReplayStep(Math.max(activeStep - 1, 0))}
+            >
+              Previous
+            </button>
+            <button
+              style={BUTTON_STYLE}
+              onClick={() => setReplayStep(Math.min(activeStep + 1, events.length))}
+            >
+              Next
+            </button>
+            <button style={BUTTON_STYLE} onClick={() => setReplayStep(events.length)}>
+              Latest
+            </button>
+          </div>
+        ) : (
+          <CollapsibleTechnicalSection title="Replay controls" toggleLabel="Show replay controls">
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+              <button style={BUTTON_STYLE} onClick={() => setReplayStep(0)}>
+                First
+              </button>
+              <button
+                style={BUTTON_STYLE}
+                onClick={() => setReplayStep(Math.max(activeStep - 1, 0))}
+              >
+                Previous
+              </button>
+              <button
+                style={BUTTON_STYLE}
+                onClick={() => setReplayStep(Math.min(activeStep + 1, events.length))}
+              >
+                Next
+              </button>
+              <button style={BUTTON_STYLE} onClick={() => setReplayStep(events.length)}>
+                Latest
+              </button>
+            </div>
+          </CollapsibleTechnicalSection>
+        )}
 
         <div style={{ color: "#cbd5e0", fontSize: 12, lineHeight: 1.45 }}>
           {uiMode === "developer"

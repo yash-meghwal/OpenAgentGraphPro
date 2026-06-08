@@ -69,6 +69,7 @@ import type {
   ProductGraphHandoffResult,
   WriteProductGraphHandoffResult,
 } from "../lib/productGraphApi.js";
+import { ContextualTipBanner } from "./ContextualTipBanner.js";
 
 type ProductKindFilter = ProductNodeKind | "all";
 type ProductStatusFilter = ProductNodeStatus | "all";
@@ -3252,6 +3253,7 @@ export function ProductGraphContent({
             aria-label="Scan project"
             style={{ background: "#0f172a", border: "1px solid #14532d", borderRadius: 12, padding: 12, display: "grid", gap: 9 }}
           >
+            <ContextualTipBanner tipId="first_scan" visible />
             <div style={{ color: "#86efac", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
               How the code connects
             </div>
