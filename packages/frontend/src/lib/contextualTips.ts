@@ -10,7 +10,7 @@ export type ContextualTipCopy = {
 export const CONTEXTUAL_TIPS: Record<ContextualTipId, ContextualTipCopy> = {
   first_graph: {
     title: "Your graph is live",
-    body: "Click any step to read what it means. Use Step history below to rewind what happened.",
+    body: "When steps appear on the graph, click any step to read what it means. Use Step history below to rewind what happened.",
   },
   first_approval: {
     title: "Approval needed",

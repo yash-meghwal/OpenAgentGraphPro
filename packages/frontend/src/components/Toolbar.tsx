@@ -45,9 +45,11 @@ const RUN_WORKSPACE_ROOT_STORAGE_KEY = "openagentgraph:run-workspace-root";
 const MAX_STORED_WORKSPACE_ROOT_LENGTH = 1024;
 export const AI_PROVIDER_SETUP_GUIDE_PATH = "docs/AI-PROVIDER-SETUP.md";
 
+export const TOOLBAR_GRAPH_SELECT_MAX_WIDTH = 280;
+
 export const TOOLBAR_LAYOUT_CSS = `
 .app-toolbar {
-  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr) auto;
 }
 
 .toolbar-primary,
@@ -72,6 +74,19 @@ export const TOOLBAR_LAYOUT_CSS = `
 }
 
 .toolbar-status span {
+  white-space: nowrap;
+}
+
+.toolbar-actions {
+  overflow: hidden;
+}
+
+.toolbar-graph-select {
+  flex: 0 1 ${TOOLBAR_GRAPH_SELECT_MAX_WIDTH}px;
+  min-width: 0;
+  max-width: min(${TOOLBAR_GRAPH_SELECT_MAX_WIDTH}px, 36vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -171,6 +186,27 @@ function getWorkspaceRootStorage(storage?: WorkspaceRootStorage): WorkspaceRootS
 
 export function normalizeRunWorkspaceRoot(value: string): string {
   return value.trim();
+}
+
+export function formatToolbarGraphSelectLabel(label: string, maxLength = 42): string {
+  const trimmed = label.trim();
+  if (trimmed.length <= maxLength) return trimmed;
+  return `${trimmed.slice(0, Math.max(1, maxLength - 1))}…`;
+}
+
+export function buildToolbarGraphChoices(
+  dashboard: Array<{ graphId: string; goalTitle: string }>,
+  graphs: Array<{ id: string; title: string }>
+): Array<{ id: string; label: string; fullLabel: string }> {
+  return dashboard.map((item) => {
+    const graph = graphs.find((candidate) => candidate.id === item.graphId);
+    const fullLabel = graph?.title?.trim() || item.goalTitle;
+    return {
+      id: item.graphId,
+      label: formatToolbarGraphSelectLabel(fullLabel),
+      fullLabel,
+    };
+  });
 }
 
 function normalizeStoredWorkspaceRoot(value: string): string {
@@ -542,8 +578,12 @@ export function Toolbar() {
     [graphs, activeGraphId]
   );
   const graphChoices = useMemo(
-    () => dashboard.map((item) => ({ id: item.graphId, title: item.goalTitle })),
-    [dashboard]
+    () => buildToolbarGraphChoices(dashboard, graphs),
+    [dashboard, graphs]
+  );
+  const activeGraphChoice = useMemo(
+    () => graphChoices.find((choice) => choice.id === activeGraphId) ?? null,
+    [graphChoices, activeGraphId]
   );
 
   const plainEnglishReport = useMemo(
@@ -879,7 +919,9 @@ export function Toolbar() {
       <div className="toolbar-actions" style={{ display: "flex", alignItems: "center", gap: 8 }}>
         {graphChoices.length > 0 && (
           <select
+            className="toolbar-graph-select"
             value={activeGraphId ?? ""}
+            title={activeGraphChoice?.fullLabel}
             onChange={async (event) => {
               if (!event.target.value) return;
               await openGraph(event.target.value);
@@ -888,8 +930,8 @@ export function Toolbar() {
           >
             {!activeGraphId ? <option value="">Select a run…</option> : null}
             {graphChoices.map((graph) => (
-              <option key={graph.id} value={graph.id}>
-                {graph.title}
+              <option key={graph.id} value={graph.id} title={graph.fullLabel}>
+                {graph.label}
               </option>
             ))}
           </select>

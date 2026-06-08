@@ -5,6 +5,9 @@ import {
   GoalRunReadinessNotice,
   AI_PROVIDER_SETUP_GUIDE_PATH,
   TOOLBAR_LAYOUT_CSS,
+  TOOLBAR_GRAPH_SELECT_MAX_WIDTH,
+  buildToolbarGraphChoices,
+  formatToolbarGraphSelectLabel,
   copyAiProviderSetupGuidePath,
   getGoalRunReadinessState,
   getProviderRefreshReadinessNotice,
@@ -124,6 +127,29 @@ describe("App lazy graph boundary", () => {
     expect(TOOLBAR_LAYOUT_CSS).toContain("grid-template-columns: 1fr");
     expect(TOOLBAR_LAYOUT_CSS).toContain(".toolbar-graph-run");
     expect(TOOLBAR_LAYOUT_CSS).toContain("grid-column: 1 / -1");
+    expect(TOOLBAR_LAYOUT_CSS).toContain(".toolbar-graph-select");
+    expect(TOOLBAR_LAYOUT_CSS).toContain(`max-width: min(${TOOLBAR_GRAPH_SELECT_MAX_WIDTH}px`);
+  });
+
+  it("prefers short graph titles and truncates long run labels for the toolbar selector", () => {
+    const longGoal =
+      "Review the files in my project folder and summarize what the codebase does, what looks incomplete, and what I should focus on next.";
+
+    expect(
+      buildToolbarGraphChoices(
+        [{ graphId: "graph-1", goalTitle: longGoal }],
+        [{ id: "graph-1", title: "Review this folder" }]
+      )
+    ).toEqual([
+      {
+        id: "graph-1",
+        label: "Review this folder",
+        fullLabel: "Review this folder",
+      },
+    ]);
+
+    expect(formatToolbarGraphSelectLabel(longGoal).endsWith("…")).toBe(true);
+    expect(formatToolbarGraphSelectLabel(longGoal).length).toBeLessThanOrEqual(42);
   });
 
   it("explains when a goal run needs workspace and provider setup before execution", () => {
