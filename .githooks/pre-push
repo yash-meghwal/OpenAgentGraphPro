@@ -1,0 +1,21 @@
+#!/bin/sh
+# Block accidental pushes from the Pro workspace to the V1 OpenAgentGraph repo.
+
+blocked_host_path="github.com/yash-meghwal/OpenAgentGraph"
+
+if [ "${OPENAGENTGRAPH_PRO_ALLOW_V1_PUSH:-}" = "1" ]; then
+  exit 0
+fi
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ -n "$remote_ref" ] || continue
+  case "$remote_ref" in
+    *"$blocked_host_path"*)
+      echo "Blocked: OpenAgentGraphPro must not push to the V1 OpenAgentGraph repo ($blocked_host_path)." >&2
+      echo "Use a separate Pro remote instead. Emergency override: OPENAGENTGRAPH_PRO_ALLOW_V1_PUSH=1 git push ..." >&2
+      exit 1
+      ;;
+  esac
+done
+
+exit 0
