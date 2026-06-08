@@ -1,6 +1,6 @@
 {
   "name": "openagentgraph",
-  "description": "Event-sourced execution graphs, code maps, handoffs, and coordination surfaces for supervised autonomous software work.",
+  "description": "OpenAgentGraph Pro — human-friendly supervised AI work with execution graphs, code maps, and agent collaboration.",
   "private": true,
   "license": "AGPL-3.0-only",
   "engines": {
