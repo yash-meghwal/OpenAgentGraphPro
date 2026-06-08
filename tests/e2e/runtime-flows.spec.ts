@@ -2,6 +2,9 @@ import { expect, test, type Locator, type Page, type Route } from "@playwright/t
 
 type ApiHandler = (route: Route) => Promise<void> | void;
 
+const FIRST_RUN_WIZARD_STORAGE_KEY = "openagentgraph:first-run-wizard-completed";
+const ONBOARDING_STORAGE_KEY = "openagentgraph:onboarding-dismissed";
+
 function now() {
   return "2026-04-17T12:00:00.000Z";
 }
@@ -666,9 +669,19 @@ async function pressButton(page: Page, button: Locator) {
   await page.keyboard.press("Enter");
 }
 
+async function startPastFirstRun(page: Page) {
+  await page.addInitScript(
+    ([firstRunWizardStorageKey, onboardingStorageKey]) => {
+      window.localStorage.setItem(firstRunWizardStorageKey, "true");
+      window.localStorage.setItem(onboardingStorageKey, "true");
+    },
+    [FIRST_RUN_WIZARD_STORAGE_KEY, ONBOARDING_STORAGE_KEY]
+  );
+}
+
 async function openProductGraph(page: Page) {
   const skipFirstRunWizard = page.getByRole("button", { name: "Skip" });
-  await skipFirstRunWizard.click({ timeout: 5000 }).catch(() => undefined);
+  await skipFirstRunWizard.click({ timeout: 2000 }).catch(() => undefined);
   await page.getByRole("button", { name: "Advanced", exact: true }).click();
   await page.getByRole("button", { name: "Product & code" }).click();
 }
@@ -703,6 +716,8 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
   });
 
   test("loads a healthy signed-in dashboard and keeps similar/comparison flows usable", async ({ page }) => {
+    await startPastFirstRun(page);
+
     await routeApi(page, {
       "/ready": (route) =>
         route.fulfill({
@@ -844,10 +859,10 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
 
     await expect(page.getByRole("button", { name: /Approve schema rollout/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Review security hardening/i })).toBeVisible();
-    await expect(page.getByText("Signed in as Priya Operator with operator access.")).toBeVisible();
+    await expect(page.getByText("Signed in as Priya Operator.").first()).toBeVisible();
 
-    await page.getByRole("button", { name: /^Similar runs$/ }).first().click();
-    await expect(page.getByText("Similar past runs").first()).toBeVisible();
+    await page.getByRole("button", { name: /^Similar projects$/ }).first().click();
+    await expect(page.getByText("Similar past projects").first()).toBeVisible();
     await expect(page.getByText("90% similar")).toBeVisible();
 
     await page.getByRole("button", { name: "Compare with similar run" }).click();
@@ -912,13 +927,11 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
 
     await page.goto("/");
 
-    await expect(page.getByText("Read-only mode")).toBeVisible();
-    await expect(page.getByText("You can view this workspace, but protected actions require sign-in.")).toBeVisible();
-    await expect(
-      page.locator("text=OpenAI provider is not configured; goal execution is unavailable.").first()
-    ).toBeVisible();
-    await expect(page.getByText("Set OPENAI_API_KEY in the backend environment.").first()).toBeVisible();
-    await expect(page.getByText("What you are seeing")).toBeVisible();
+    await expect(page.getByText("View only").first()).toBeVisible();
+    await expect(page.getByText("View-only until you sign in.")).toBeVisible();
+    await expect(page.getByText("Some AI features are using fallback behavior.").first()).toBeVisible();
+    await expect(page.getByText("Can't reach OpenAgentGraph")).toBeVisible();
+    await expect(page.getByText("AI setup is optional")).toBeVisible();
   });
 
   test("opens the intent graph view and renders product graph nodes", async ({ page }) => {
@@ -2455,9 +2468,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     await page.goto("/");
     await openProductGraph(page);
     const codeScanGroup = page.getByRole("group", { name: "Codebase scan", exact: true });
-    await expect(codeScanGroup).toContainText(
-      "Run Scan Codebase from the manager tools in this sidebar to refresh the native Product Graph code map."
-    );
+    await expect(codeScanGroup).toContainText("Scan your project from the sidebar to build a code overview.");
     await expect(codeScanGroup.getByRole("button", { name: "Scan Codebase" })).toBeEnabled();
     await expect.poll(() => productGraphReads).toBe(1);
 
@@ -3517,11 +3528,12 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
 
     await page.goto("/");
 
-    await expect(page.getByText("Backend unavailable")).toBeVisible();
-    await expect(page.locator("text=The OpenAgentGraph backend could not be reached.").first()).toBeVisible();
+    await expect(page.getByText("Can't reach OpenAgentGraph")).toBeVisible();
+    await expect(page.getByText("The app couldn't connect to its server.")).toBeVisible();
   });
 
   test("recovers from an expired session and keeps large-graph/report flows usable", async ({ page }) => {
+    await startPastFirstRun(page);
     await installEventSourceStub(page);
 
     await routeApi(page, {
@@ -3617,12 +3629,13 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     await page.goto("/");
 
     await expect(page.locator("text=Session expired").first()).toBeVisible();
-    await expect(page.locator("text=Your session has expired. Add a new token to continue.").first()).toBeVisible();
+    await expect(page.locator("text=Your session has expired. Sign in again to continue.").first()).toBeVisible();
 
-    await page.getByPlaceholder("Paste bearer token...").fill("replacement.token.value");
-    await page.getByRole("button", { name: "Add token" }).click();
+    await page.getByPlaceholder("Paste sign-in token...").fill("replacement.token.value");
+    await page.getByRole("button", { name: "Sign in" }).click();
 
     await expect(page.locator("text=Large graph mode is active to keep this run responsive.").first()).toBeVisible();
+    await page.getByRole("button", { name: "Advanced", exact: true }).click();
     await expect(page.getByRole("button", { name: "Show full detail" })).toBeVisible();
 
     await page.getByRole("button", { name: "Show full detail" }).click();
@@ -3641,6 +3654,8 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
   });
 
   test("refreshes provider readiness from the Current run setup controls", async ({ page }) => {
+    await startPastFirstRun(page);
+
     const projection = {
       ...makeControlProjection(),
       runControlState: "idle" as const,
@@ -3738,7 +3753,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     await expect(runButton).toBeDisabled();
     await expect(page.getByText("Add a workspace path and configure the AI provider before running this goal.")).toBeVisible();
 
-    await page.getByLabel("Workspace path").fill(workspaceRoot);
+    await page.getByLabel("Your project folder").fill(workspaceRoot);
     await expect(page.getByText("Configure the AI provider before running this goal.")).toBeVisible();
 
     await page.getByRole("button", { name: "Refresh provider status" }).click();
@@ -3754,6 +3769,8 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
   test("supports replay stepping plus pause, stop, approval, reject, continue, and annotation flows in the browser UI", async ({
     page,
   }) => {
+    await startPastFirstRun(page);
+
     const state = {
       projection: makeControlProjection(),
       posts: [] as string[],
@@ -3847,6 +3864,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     await expect(page.getByRole("button", { name: "Pause run" })).toBeVisible();
     await expect(page.getByText("Step 4 of 4")).toBeVisible();
 
+    await page.getByRole("button", { name: "Show replay controls" }).click();
     await page.getByRole("button", { name: "First" }).click();
     await expect(page.getByText("Step 0 of 4")).toBeVisible();
     await expect(page.getByText("The replay is at the very beginning. No steps have been added yet.")).toBeVisible();
@@ -3867,8 +3885,9 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
 
     await page.getByRole("button", { name: "Continue" }).click();
 
+    await page.getByRole("button", { name: "Advanced", exact: true }).click();
     await page.getByPlaceholder("Add a run note...").fill("Operator note from browser");
-    await page.getByRole("button", { name: "Add note" }).click();
+    await page.getByRole("button", { name: "Add note", exact: true }).click();
     await expect(page.getByPlaceholder("Add a run note...")).toHaveValue("");
 
     expect(state.posts).toEqual([
@@ -3882,6 +3901,8 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
   });
 
   test("supports resume from a paused run in the browser UI", async ({ page }) => {
+    await startPastFirstRun(page);
+
     const projection = {
       ...makeControlProjection(),
       runControlState: "paused" as const,
