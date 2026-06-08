@@ -666,6 +666,13 @@ async function pressButton(page: Page, button: Locator) {
   await page.keyboard.press("Enter");
 }
 
+async function openProductGraph(page: Page) {
+  const skipFirstRunWizard = page.getByRole("button", { name: "Skip" });
+  await skipFirstRunWizard.click({ timeout: 5000 }).catch(() => undefined);
+  await page.getByRole("button", { name: "Advanced", exact: true }).click();
+  await page.getByRole("button", { name: "Product & code" }).click();
+}
+
 async function expectMultipleAcceptedPlanRunTrace(traceabilityGroup: Locator) {
   await expect(traceabilityGroup).toContainText("7 nodes");
   await expect(traceabilityGroup).toContainText("8 links");
@@ -1733,7 +1740,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
 
     await expect(page.getByText("Product intent").first()).toBeVisible();
     await expect(page.getByRole("button", { name: /Checkout visibility/ }).first()).toBeVisible();
@@ -2123,7 +2130,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     const specKitImportGroup = page.getByRole("group", { name: "Spec Kit import" });
     await expect(specKitImportGroup.getByRole("button", { name: "Import Spec Kit" })).toBeEnabled();
 
@@ -2222,7 +2229,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     const specKitImportGroup = page.getByRole("group", { name: "Spec Kit import" });
     await expect(specKitImportGroup.getByRole("button", { name: "Import Spec Kit" })).toBeEnabled();
     await expect.poll(() => productGraphReads).toBe(1);
@@ -2340,7 +2347,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     const codeScanGroup = page.getByRole("group", { name: "Codebase scan", exact: true });
     await expect(codeScanGroup.getByRole("button", { name: "Scan Codebase" })).toBeEnabled();
     await expect.poll(() => productGraphReads).toBe(1);
@@ -2446,7 +2453,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     const codeScanGroup = page.getByRole("group", { name: "Codebase scan", exact: true });
     await expect(codeScanGroup).toContainText(
       "Run Scan Codebase from the manager tools in this sidebar to refresh the native Product Graph code map."
@@ -2530,7 +2537,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
 
     const productHealthGroup = page.getByRole("group", { name: "Product health" });
     await expect(productHealthGroup).toContainText("1 of 1 completed task needs run evidence.");
@@ -2693,7 +2700,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     await page.getByLabel("Intent kind filter").selectOption({ label: "All intent" });
     const checkoutTaskCard = page.getByRole("button", { name: /Wire checkout status panel/ }).first();
     const featureCard = page.getByRole("button", { name: /Checkout visibility/ }).first();
@@ -2822,7 +2829,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     await expect(page.getByText("Add intent node")).toBeVisible();
 
     await page.getByLabel("Node kind").selectOption("task");
@@ -2939,7 +2946,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     await expect(page.getByText("Create feature bundle")).toBeVisible();
 
     await page.getByLabel("Bundle feature title").fill("Bundle roadmap");
@@ -3040,7 +3047,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     await expect(page.getByText("Create feature bundle")).toBeVisible();
 
     await page.getByLabel("Bundle feature title").fill("Bundle roadmap");
@@ -3160,7 +3167,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     await expect(page.getByText("Add relationship")).toBeVisible();
 
     await page.getByLabel("Edge source").selectOption("story:operator-sees-checkout");
@@ -3289,7 +3296,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     await page.getByLabel("Intent kind filter").selectOption("task");
     const checkoutTaskCard = page.getByRole("button", { name: /Wire checkout status panel/ }).first();
     await checkoutTaskCard.focus();
@@ -3462,7 +3469,7 @@ test.describe("OpenAgentGraph launch-critical browser flows", () => {
     });
 
     await page.goto("/");
-    await page.getByRole("button", { name: "Intent graph" }).click();
+    await openProductGraph(page);
     await page.getByLabel("Intent kind filter").selectOption("task");
     const checkoutTaskCard = page.getByRole("button", { name: /Wire checkout status panel/ }).first();
     await checkoutTaskCard.focus();
