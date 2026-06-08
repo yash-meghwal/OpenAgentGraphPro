@@ -14,18 +14,25 @@ export type SessionLifecycleView =
   | "invalid_session"
   | "expired_session";
 
+export type OnboardingState = {
+  title: string;
+  body: string;
+  nextSteps: string[];
+  primaryActionLabel?: string;
+};
+
 export function formatRuntimeStatusLabel(status: RuntimeStatusView): string {
   switch (status) {
     case "connected":
       return "Connected";
     case "degraded":
-      return "Degraded";
+      return "Limited";
     case "read_only":
-      return "Read-only";
+      return "View only";
     case "auth_required":
-      return "Auth required";
+      return "Sign-in required";
     case "unreachable":
-      return "Backend unavailable";
+      return "Offline";
   }
 }
 
@@ -36,12 +43,12 @@ export function formatSessionLifecycleLabel(sessionLifecycle: SessionLifecycleVi
     case "expired_session":
       return "Session expired";
     case "invalid_session":
-      return "Auth required";
+      return "Sign-in required";
     case "auth_required":
-      return "Auth required";
+      return "Sign-in required";
     case "read_only":
     default:
-      return "Read-only";
+      return "View only";
   }
 }
 
@@ -52,7 +59,7 @@ export function formatFrontierStatusLabel(status: FrontierStatus | null | undefi
     case "exploring":
       return "Exploring";
     case "drifting":
-      return "Drifting";
+      return "Needs attention";
     case "blocked":
       return "Blocked";
     default:
@@ -78,20 +85,20 @@ export function getRuntimeBannerTone(status: RuntimeStatusView) {
       return {
         background: "#342816",
         border: "#6b4f1f",
-        accent: "#f6e05e",
+        accent: "#f6ad55",
       };
     case "read_only":
       return {
-        background: "#1f2937",
-        border: "#374151",
-        accent: "#cbd5e0",
+        background: "#1c2432",
+        border: "#31405a",
+        accent: "#90cdf4",
       };
     case "unreachable":
     default:
       return {
-        background: "#351d1d",
-        border: "#6b2b2b",
-        accent: "#feb2b2",
+        background: "#2d1b1b",
+        border: "#5c2b2b",
+        accent: "#fc8181",
       };
   }
 }
@@ -100,70 +107,73 @@ export function getOnboardingState(input: {
   runtimeStatus: RuntimeStatusView;
   runtimeFallbackLikely: boolean;
   sessionLifecycle: SessionLifecycleView;
-}) {
+}): OnboardingState {
   if (input.runtimeStatus === "unreachable") {
     return {
-      title: "Backend unavailable",
-      body: "The OpenAgentGraph backend could not be reached.",
+      title: "Can't reach OpenAgentGraph",
+      body: "The app couldn't connect to its server.",
       nextSteps: [
-        "Check that the backend is running and reachable from this browser.",
-        "Once it reconnects, runs and runtime details will appear here.",
+        "Make sure the app is running. If someone else set this up, ask them to start the server.",
+        "Refresh this page once the connection is back.",
       ],
     };
   }
 
   if (input.runtimeStatus === "degraded") {
     return {
-      title: "Backend connected with limits",
+      title: "Connected with limits",
       body: input.runtimeFallbackLikely
-        ? "Backend connected, but some AI features are currently using fallback behavior."
-        : "Backend connected, but some features are currently limited.",
+        ? "You're connected, but AI assistance isn't fully set up yet."
+        : "You're connected, but some features are limited right now.",
       nextSteps: [
-        "You can still inspect runs and replay progress from the current projection state.",
-        "Operator controls will become more useful once the backend is fully ready.",
+        "You can still create projects and follow progress.",
+        "Set up an AI assistant later if you want automated help.",
       ],
+      primaryActionLabel: "Start your first project",
     };
   }
 
   if (input.sessionLifecycle === "expired_session") {
     return {
       title: "Session expired",
-      body: "Your session has expired. Add a new token to continue.",
+      body: "Your sign-in has expired.",
       nextSteps: [
-        "You can keep viewing runs while the session is refreshed.",
-        "Protected actions will return once a valid session is available.",
+        "You can still view existing projects.",
+        "Use Sign in in the top bar to manage work again.",
       ],
     };
   }
 
   if (input.sessionLifecycle === "invalid_session") {
     return {
-      title: "Auth required",
-      body: "Your session is not valid for this action. Add a new token to continue.",
+      title: "Sign-in required",
+      body: "Your session isn't valid for making changes.",
       nextSteps: [
-        "You can keep viewing runs while you update the token.",
-        "Protected actions will return once the session is valid again.",
+        "You can still view existing projects.",
+        "Use Sign in in the top bar to continue.",
       ],
     };
   }
 
   if (input.sessionLifecycle === "read_only") {
     return {
-      title: "Read-only mode",
-      body: "You can view this workspace, but protected actions require sign-in.",
+      title: "View-only access",
+      body: "You can look around, but starting or managing projects requires sign-in.",
       nextSteps: [
-        "Runs will still appear here when the backend creates them.",
-        "Sign in when you want to manage runs, approvals, or annotations.",
+        "Projects appear here once someone creates them.",
+        "Sign in when you want to start or manage a project.",
       ],
     };
   }
 
   return {
-    title: "No runs yet",
-    body: "No runs yet. OpenAgentGraph is ready to observe or manage runs once the backend has created them.",
+    title: "No projects yet",
+    body: "Start your first project to supervise AI work step by step.",
     nextSteps: [
-      "Runs appear here after the backend creates them for a workspace.",
-      "Open a run to inspect the graph, evidence, replay, and human decisions.",
+      "Click + New Project in the top bar.",
+      "Describe what you want done in plain language.",
+      "Open your project to watch progress and approve steps.",
     ],
+    primaryActionLabel: "Start your first project",
   };
 }

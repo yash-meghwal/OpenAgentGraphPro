@@ -253,7 +253,7 @@ const TEST_EVIDENCE_TASK_LIMIT = 4;
 const CODE_INTENT_DRIFT_CODE_LIMIT = 4;
 const CODE_MAP_FRESHNESS_CODE_LIMIT = 4;
 const CODEBASE_SCAN_SETUP_GUIDANCE =
-  "Run Scan Codebase from the manager tools in this sidebar to refresh the native Product Graph code map.";
+  "Scan your project from the sidebar to build a code overview.";
 const CODEBASE_SCAN_SCOPE_COPY =
   "Scans bounded local TypeScript and JavaScript files, top-level exports, semantic imports, and symbol relationships.";
 type CodeMapThemeKey = keyof typeof DEFAULT_GRAPH_THEME.codeMap;
@@ -2335,7 +2335,7 @@ export function ProductGraphContent({
     ? CODEBASE_SCAN_SETUP_GUIDANCE
     : "Ask an operator/admin to refresh the native Product Graph code map.";
   const codebaseScanRefreshCopy = canEditProductGraph
-    ? "Run Scan Codebase again from the manager tools."
+    ? "Scan your project again from the sidebar."
     : "Ask an operator/admin to refresh the native Product Graph code map.";
   const codeMapFreshnessHealthCopy = !codeMapFreshnessHealth.hasCodeScanMap && !codeMapFreshnessHealth.hasRunTouchedCode
     ? `No codebase scan map is available yet. ${codebaseScanSetupCopy}`
@@ -2357,8 +2357,8 @@ export function ProductGraphContent({
         ? "#86efac"
         : "#94a3b8";
   const codebaseScanLocationCopy = canEditProductGraph
-    ? "Scan Codebase lives in the manager tools in this sidebar."
-    : "Operators/admins can refresh this map from manager tools in this sidebar.";
+    ? "Use Scan Codebase in the sidebar to build your code overview."
+    : "An operator can scan the project from the sidebar.";
   const codebasePlanningContextCopy = codeMapFreshnessHealth.isCodeMapMissing
     ? "Codex planning may miss code relationship context until a codebase scan runs."
     : codeMapFreshnessHealth.isCodeMapStale
@@ -3172,7 +3172,7 @@ export function ProductGraphContent({
       <div style={{ flex: 1, background: "#0f1117", color: "#e2e8f0", display: "grid", placeItems: "center", padding: 24 }}>
         <div style={{ width: "min(520px, 100%)", border: "1px solid #334155", borderRadius: 16, padding: 20, background: "#111827" }}>
           <div style={{ color: "#f59e0b", fontSize: 11, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Intent graph unavailable
+            Product & code unavailable
           </div>
           <div style={{ marginTop: 8, fontSize: 18, fontWeight: 800 }}>The product graph could not be loaded.</div>
           <div style={{ marginTop: 8, color: "#94a3b8", fontSize: 13, lineHeight: 1.5 }}>{productGraphError}</div>
@@ -3232,7 +3232,7 @@ export function ProductGraphContent({
       >
         <div>
           <div style={{ color: "#38bdf8", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-            Intent graph
+            Product & code
           </div>
           <div style={{ marginTop: 6, fontSize: 20, fontWeight: 900 }}>
             Product intent
@@ -3395,7 +3395,7 @@ export function ProductGraphContent({
                 Code Map is ready; product intent is empty.
               </div>
               <div>
-                Import Spec Kit artifacts or create the first feature bundle so planning, acceptance evidence, and gate checks have a product story to follow.
+                Add your first product goal, or scan your project to get started. This helps OpenAgentGraph understand what you are building and what success looks like.
               </div>
               <div style={{ color: "#93c5fd", fontWeight: 800 }}>
                 The code scan still helps navigation; it is not a replacement for tasks, features, or acceptance criteria.

@@ -140,6 +140,7 @@ const LAST_SEEN_STORAGE_KEY = "openagentgraph:last-seen";
 const ACTOR_STORAGE_KEY = "openagentgraph:actor-id";
 const AUTH_TOKEN_STORAGE_KEY = "openagentgraph:auth-token";
 const ONBOARDING_STORAGE_KEY = "openagentgraph:onboarding-dismissed";
+const FIRST_RUN_WIZARD_STORAGE_KEY = "openagentgraph:first-run-wizard-completed";
 const AVAILABLE_ACTORS: ActorIdentity[] = [
   { actorId: "viewer", displayName: "Viewer", role: "viewer" },
   { actorId: "operator", displayName: "Operator", role: "operator" },
@@ -221,6 +222,20 @@ function writeAuthToken(token: string) {
 function readOnboardingDismissed(): boolean {
   if (typeof window === "undefined") return false;
   return window.localStorage.getItem(ONBOARDING_STORAGE_KEY) === "true";
+}
+
+function readFirstRunWizardCompleted(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(FIRST_RUN_WIZARD_STORAGE_KEY) === "true";
+}
+
+function writeFirstRunWizardCompleted(value: boolean) {
+  if (typeof window === "undefined") return;
+  if (value) {
+    window.localStorage.setItem(FIRST_RUN_WIZARD_STORAGE_KEY, "true");
+    return;
+  }
+  window.localStorage.removeItem(FIRST_RUN_WIZARD_STORAGE_KEY);
 }
 
 function writeOnboardingDismissed(value: boolean) {
@@ -607,6 +622,8 @@ interface AppState {
   sessionLoading: boolean;
   dashboardLoading: boolean;
   onboardingDismissed: boolean;
+  firstRunWizardCompleted: boolean;
+  createDialogOpen: boolean;
   runtimeStatus: "connected" | "degraded" | "read_only" | "auth_required" | "unreachable";
   runtimeMessage: string;
   backendReadyStatus: DiagnosticsStatus | "unknown";
@@ -797,6 +814,9 @@ interface AppState {
   setCurrentView: (view: AppState["currentView"]) => void;
   dismissOnboarding: () => void;
   resetOnboarding: () => void;
+  completeFirstRunWizard: () => void;
+  resetFirstRunWizard: () => void;
+  setCreateDialogOpen: (open: boolean) => void;
   setDashboardFilter: (value: DashboardFilter) => void;
   setDashboardSort: (value: DashboardSort) => void;
   setDashboardQuery: (value: string) => void;
@@ -826,6 +846,8 @@ export const useStore = create<AppState>((set, get) => ({
   sessionLoading: true,
   dashboardLoading: false,
   onboardingDismissed: readOnboardingDismissed(),
+  firstRunWizardCompleted: readFirstRunWizardCompleted(),
+  createDialogOpen: false,
   runtimeStatus: frontendRuntimeConfig.valid ? "read_only" : "unreachable",
   runtimeMessage: frontendRuntimeConfig.message ?? "",
   backendReadyStatus: "unknown",
@@ -2103,6 +2125,15 @@ export const useStore = create<AppState>((set, get) => ({
     writeOnboardingDismissed(false);
     set({ onboardingDismissed: false });
   },
+  completeFirstRunWizard: () => {
+    writeFirstRunWizardCompleted(true);
+    set({ firstRunWizardCompleted: true });
+  },
+  resetFirstRunWizard: () => {
+    writeFirstRunWizardCompleted(false);
+    set({ firstRunWizardCompleted: false });
+  },
+  setCreateDialogOpen: (open) => set({ createDialogOpen: open }),
   setDashboardFilter: (value) => set({ dashboardFilter: value }),
   setDashboardSort: (value) => set({ dashboardSort: value }),
   setDashboardQuery: (value) => set({ dashboardQuery: value }),

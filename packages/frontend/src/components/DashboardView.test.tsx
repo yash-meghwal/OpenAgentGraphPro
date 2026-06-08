@@ -3,6 +3,24 @@ import { describe, expect, it, vi } from "vitest";
 import { useStore } from "../lib/store.js";
 import { DashboardView, getDashboardEmptyState } from "./DashboardView.js";
 
+function expandProviderSetup(renderer: TestRenderer.ReactTestRenderer) {
+  const setupButton = renderer.root
+    .findAllByType("button")
+    .find((node) => {
+      const label = node.children.join("");
+      return label.includes("Set up AI") || label.includes("Change AI setup");
+    });
+  if (setupButton) {
+    act(() => setupButton.props.onClick());
+  }
+  const advancedButton = renderer.root
+    .findAllByType("button")
+    .find((node) => node.children.join("") === "Advanced setup");
+  if (advancedButton) {
+    act(() => advancedButton.props.onClick());
+  }
+}
+
 describe("DashboardView empty states", () => {
   it("shows a clear first-run read-only message", () => {
     expect(
@@ -12,11 +30,11 @@ describe("DashboardView empty states", () => {
         sessionLifecycle: "read_only",
       })
     ).toEqual({
-      title: "Read-only mode",
-      body: "You can view this workspace, but protected actions require sign-in.",
+      title: "View-only access",
+      body: "You can look around, but starting or managing projects requires sign-in.",
       nextSteps: [
-        "Runs will still appear here when the backend creates them.",
-        "Sign in when you want to manage runs, approvals, or annotations.",
+        "Projects appear here once someone creates them.",
+        "Sign in when you want to start or manage a project.",
       ],
     });
   });
@@ -29,12 +47,13 @@ describe("DashboardView empty states", () => {
         sessionLifecycle: "signed_in",
       })
     ).toEqual({
-      title: "Backend connected with limits",
-      body: "Backend connected, but some AI features are currently using fallback behavior.",
+      title: "Connected with limits",
+      body: "You're connected, but AI assistance isn't fully set up yet.",
       nextSteps: [
-        "You can still inspect runs and replay progress from the current projection state.",
-        "Operator controls will become more useful once the backend is fully ready.",
+        "You can still create projects and follow progress.",
+        "Set up an AI assistant later if you want automated help.",
       ],
+      primaryActionLabel: "Start your first project",
     });
   });
 
@@ -46,12 +65,14 @@ describe("DashboardView empty states", () => {
         sessionLifecycle: "signed_in",
       })
     ).toEqual({
-      title: "No runs yet",
-      body: "No runs yet. OpenAgentGraph is ready to observe or manage runs once the backend has created them.",
+      title: "No projects yet",
+      body: "Start your first project to supervise AI work step by step.",
       nextSteps: [
-        "Runs appear here after the backend creates them for a workspace.",
-        "Open a run to inspect the graph, evidence, replay, and human decisions.",
+        "Click + New Project in the top bar.",
+        "Describe what you want done in plain language.",
+        "Open your project to watch progress and approve steps.",
       ],
+      primaryActionLabel: "Start your first project",
     });
   });
 
@@ -60,6 +81,7 @@ describe("DashboardView empty states", () => {
       dashboard: [],
       dashboardLoading: false,
       onboardingDismissed: true,
+      firstRunWizardCompleted: true,
       runtimeStatus: "degraded",
       runtimeFallbackLikely: true,
       runtimeEnvironmentMode: "development",
@@ -97,10 +119,11 @@ describe("DashboardView empty states", () => {
     act(() => {
       renderer = TestRenderer.create(<DashboardView />);
     });
+    expandProviderSetup(renderer!);
     const markup = JSON.stringify(renderer!.toJSON());
 
-    expect(markup).toContain("Provider setup");
-    expect(markup).toContain("Choose an AI provider");
+    expect(markup).toContain("AI assistant (optional)");
+    expect(markup).toContain("Choose how AI should help");
     expect(markup).toContain("Ollama local - no API key");
     expect(markup).toContain("Gemini API key");
     expect(markup).toContain("Anthropic API key");
@@ -108,7 +131,7 @@ describe("DashboardView empty states", () => {
     expect(markup).toContain("Ollama model");
     expect(markup).toContain("http://localhost:11434/v1");
     expect(markup).toContain("Ollama must use localhost or a loopback address; http is allowed only for localhost, 127.x.x.x, or loopback addresses.");
-    expect(markup).toContain("Graph scans, Code Map, Project Graph, and GRAPH_REPORT.md do not need a provider key.");
+    expect(markup).toContain("Advanced settings apply to this running session only. You can scan code and supervise projects without AI.");
     expect(markup).not.toContain("sk-test");
   });
 
@@ -117,6 +140,7 @@ describe("DashboardView empty states", () => {
       dashboard: [],
       dashboardLoading: false,
       onboardingDismissed: true,
+      firstRunWizardCompleted: true,
       runtimeStatus: "connected",
       runtimeFallbackLikely: false,
       runtimeEnvironmentMode: "development",
@@ -190,15 +214,14 @@ describe("DashboardView empty states", () => {
     });
     const markup = JSON.stringify(renderer!.toJSON());
 
-    expect(markup).toContain("Start here");
-    expect(markup).toContain("Workspace configured");
-    expect(markup).toContain("C:/workspace/openagentgraph (configured)");
-    expect(markup).toContain("Product Graph scan");
-    expect(markup).toContain("2026-06-02T00:00:00.000Z; 6 files, 12 symbols.");
-    expect(markup).toContain("Handoff written");
-    expect(markup).toContain("GRAPH_REPORT.md updated 2026-06-02T00:01:00.000Z");
-    expect(markup).toContain("Provider optional");
-    expect(markup).toContain("Graph scans, Code Map, Project Graph, and GRAPH_REPORT.md work with no provider key.");
+    expect(markup).toContain("Getting started");
+    expect(markup).toContain("Your folder");
+    expect(markup).toContain("Ready");
+    expect(markup).toContain("Code overview");
+    expect(markup).toContain("6 files scanned");
+    expect(markup).toContain("Summary report");
+    expect(markup).toContain("AI assistant (optional)");
+    expect(markup).toContain("Optional — you can supervise without AI");
   });
 
   it("switches custom provider setup away from the Ollama base URL default", () => {
@@ -206,6 +229,7 @@ describe("DashboardView empty states", () => {
       dashboard: [],
       dashboardLoading: false,
       onboardingDismissed: true,
+      firstRunWizardCompleted: true,
       runtimeStatus: "degraded",
       runtimeFallbackLikely: true,
       runtimeEnvironmentMode: "development",
@@ -243,6 +267,7 @@ describe("DashboardView empty states", () => {
     act(() => {
       renderer = TestRenderer.create(<DashboardView />);
     });
+    expandProviderSetup(renderer!);
 
     const providerSelect = renderer!.root
       .findAllByType("select")
@@ -267,6 +292,7 @@ describe("DashboardView empty states", () => {
       dashboard: [],
       dashboardLoading: false,
       onboardingDismissed: true,
+      firstRunWizardCompleted: true,
       runtimeStatus: "connected",
       runtimeFallbackLikely: false,
       runtimeEnvironmentMode: "development",
@@ -306,6 +332,7 @@ describe("DashboardView empty states", () => {
     act(() => {
       renderer = TestRenderer.create(<DashboardView />);
     });
+    expandProviderSetup(renderer!);
 
     const saveButton = renderer!.root
       .findAllByType("button")
@@ -322,6 +349,7 @@ describe("DashboardView empty states", () => {
       dashboard: [],
       dashboardLoading: false,
       onboardingDismissed: true,
+      firstRunWizardCompleted: true,
       runtimeStatus: "connected",
       runtimeFallbackLikely: false,
       runtimeEnvironmentMode: "development",
@@ -361,9 +389,9 @@ describe("DashboardView empty states", () => {
     act(() => {
       renderer = TestRenderer.create(<DashboardView />);
     });
+    expandProviderSetup(renderer!);
     const markup = JSON.stringify(renderer!.toJSON());
 
-    expect(markup).toContain("Runtime config");
     expect(markup).toContain("Clear runtime provider");
     expect(markup).not.toContain("sk-test");
   });
@@ -380,6 +408,7 @@ describe("DashboardView empty states", () => {
       dashboard: [],
       dashboardLoading: false,
       onboardingDismissed: true,
+      firstRunWizardCompleted: true,
       runtimeStatus: "degraded",
       runtimeFallbackLikely: true,
       runtimeEnvironmentMode: "development",
@@ -418,6 +447,7 @@ describe("DashboardView empty states", () => {
     await act(async () => {
       renderer = TestRenderer.create(<DashboardView />);
     });
+    expandProviderSetup(renderer!);
 
     const root = renderer!.root;
     const providerSelect = root.findByType("select");

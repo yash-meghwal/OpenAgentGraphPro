@@ -2430,7 +2430,7 @@ describe("ProductGraphView", () => {
       />
     );
 
-    expect(markup).toContain("Intent graph");
+    expect(markup).toContain("Product &amp; code");
     expect(markup).toContain("Product intent");
     expect(markup).toContain("Checkout visibility");
     expect(markup).toContain("Operator sees checkout status");
@@ -4386,7 +4386,7 @@ describe("ProductGraphView", () => {
     expect(healthGroupMarkup).toContain("No codebase scan map is available yet.");
     expect(healthGroupMarkup).toContain("Ask an operator/admin to refresh the native Product Graph code map.");
     expect(healthGroupMarkup).toContain("Scans bounded local TypeScript and JavaScript files");
-    expect(healthGroupMarkup).toContain("Operators/admins can refresh this map from manager tools in this sidebar.");
+    expect(healthGroupMarkup).toContain("An operator can scan the project from the sidebar.");
     expect(healthGroupMarkup).toContain("Codex planning has no codebase scan context yet.");
   });
 
@@ -5901,7 +5901,7 @@ describe("ProductGraphView", () => {
     expect(managerMarkup).toContain("Generate Handoff");
     expect(managerMarkup).toContain("Write GRAPH_REPORT.md");
     expect(managerMarkup).toContain("Scan Codebase");
-    expect(managerMarkup).toContain("Run Scan Codebase from the manager tools in this sidebar");
+    expect(managerMarkup).toContain("Use Scan Codebase in the sidebar to build your code overview.");
     expect(managerMarkup).toContain('aria-label="Spec Kit import"');
     expect(managerMarkup).toContain("Import Spec Kit");
     expect(managerMarkup).toContain("Create feature bundle");
@@ -6038,7 +6038,7 @@ describe("ProductGraphView", () => {
 
     expect(markup).toContain('aria-label="Product intent empty guidance"');
     expect(markup).toContain("Code Map is ready; product intent is empty.");
-    expect(markup).toContain("Import Spec Kit artifacts or create the first feature bundle");
+    expect(markup).toContain("Add your first product goal, or scan your project to get started.");
     expect(markup).toContain("The code scan still helps navigation; it is not a replacement for tasks, features, or acceptance criteria.");
   });
 

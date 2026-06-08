@@ -466,9 +466,11 @@ export function Toolbar() {
     setCurrentActorRole,
     setAuthToken,
     clearAuthToken,
+    createDialogOpen,
+    setCreateDialogOpen,
   } = useStore();
 
-  const [showCreate, setShowCreate] = useState(false);
+  const [showAuthPanel, setShowAuthPanel] = useState(false);
   const [title, setTitle] = useState("");
   const [goal, setGoal] = useState("");
   const [constraints, setConstraints] = useState("");
@@ -530,7 +532,7 @@ export function Toolbar() {
     const graph = await createGraph(title, goal, constraints || undefined);
     await fetchGraphs();
     await openGraph(graph.id);
-    setShowCreate(false);
+    setCreateDialogOpen(false);
     setTitle("");
     setGoal("");
     setConstraints("");
@@ -711,7 +713,7 @@ export function Toolbar() {
         <span style={{ fontWeight: 800, fontSize: 16, color: "#90cdf4", letterSpacing: "-0.02em" }}>
           OpenAgentGraph
         </span>
-        {authMode === "dev_header" ? (
+        {authMode === "dev_header" && uiMode === "developer" ? (
           <select
             value={currentActor.role}
             onChange={(event) => setCurrentActorRole(event.target.value as typeof currentActor.role)}
@@ -724,6 +726,10 @@ export function Toolbar() {
               </option>
             ))}
           </select>
+        ) : authMode === "dev_header" ? (
+          <span style={{ ...CONTROL_STYLE, background: "#0f1117", borderColor: runtimeTone.border }}>
+            {currentActor.displayName}
+          </span>
         ) : (
           <span style={{ ...CONTROL_STYLE, background: "#0f1117", borderColor: runtimeTone.border }}>
             {sessionLifecycle === "signed_in"
@@ -743,10 +749,10 @@ export function Toolbar() {
           }}
         >
           {([
-            { id: "dashboard", label: "Dashboard" },
-            { id: "intent", label: "Intent graph" },
-            { id: "project", label: "Project graph" },
-            { id: "graph", label: "Current run" },
+            { id: "dashboard", label: "Home" },
+            { id: "intent", label: "Product & code" },
+            { id: "project", label: "Files" },
+            { id: "graph", label: "Active task" },
           ] as const).map((view) => (
             <button
               key={view.id}
@@ -806,7 +812,7 @@ export function Toolbar() {
                 cursor: "pointer",
               }}
             >
-              {mode === "default" ? "Default mode" : "Developer mode"}
+              {mode === "default" ? "Simple" : "Advanced"}
             </button>
           ))}
         </div>
@@ -832,7 +838,7 @@ export function Toolbar() {
         )}
 
         <button
-          onClick={() => setShowCreate(!showCreate)}
+          onClick={() => setCreateDialogOpen(!createDialogOpen)}
           style={{
             background: "#2b6cb0",
             color: "#fff",
@@ -844,7 +850,7 @@ export function Toolbar() {
             fontWeight: 700,
           }}
         >
-          + New Graph
+          + New Project
         </button>
       </div>
 
@@ -878,11 +884,15 @@ export function Toolbar() {
         <div style={{ display: "flex", gap: 16, color: "#a0aec0", fontSize: 11, flexWrap: "wrap" }}>
           {currentView === "dashboard" ? (
             <>
-              <span>Overview: multi-run supervision from replayed projections</span>
-              <span>Open a run to inspect the graph, evidence, and replay.</span>
-              <span>Environment: {runtimeEnvironmentMode}</span>
-              <span>API: {apiBaseDisplay}</span>
-              <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+              <span>{uiMode === "developer" ? "Overview: multi-run supervision from replayed projections" : "All your projects in one place"}</span>
+              <span>{uiMode === "developer" ? "Open a run to inspect the graph, evidence, and replay." : "Open a project to watch progress and approve steps."}</span>
+              {uiMode === "developer" ? (
+                <>
+                  <span>Environment: {runtimeEnvironmentMode}</span>
+                  <span>API: {apiBaseDisplay}</span>
+                  <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+                </>
+              ) : null}
               <span>{toolbarStatusSummary}</span>
               <span>
                 {authMode === "jwt"
@@ -894,10 +904,14 @@ export function Toolbar() {
             </>
           ) : currentView === "intent" ? (
             <>
-              <span>Product graph: {productGraph?.productGraphId ?? "default"}</span>
-              <span>Environment: {runtimeEnvironmentMode}</span>
-              <span>API: {apiBaseDisplay}</span>
-              <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+              <span>{uiMode === "developer" ? `Product graph: ${productGraph?.productGraphId ?? "default"}` : "What you are building and how the code fits together"}</span>
+              {uiMode === "developer" ? (
+                <>
+                  <span>Environment: {runtimeEnvironmentMode}</span>
+                  <span>API: {apiBaseDisplay}</span>
+                  <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+                </>
+              ) : null}
               <span>{toolbarStatusSummary}</span>
               <span>
                 {productGraphLoading
@@ -909,10 +923,14 @@ export function Toolbar() {
             </>
           ) : currentView === "project" ? (
             <>
-              <span>Workspace: {projectGraph?.root ?? "local OpenAgentGraph project"}</span>
-              <span>Environment: {runtimeEnvironmentMode}</span>
-              <span>API: {apiBaseDisplay}</span>
-              <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+              <span>{uiMode === "developer" ? `Workspace: ${projectGraph?.root ?? "local OpenAgentGraph project"}` : "Browse files and folders in your project"}</span>
+              {uiMode === "developer" ? (
+                <>
+                  <span>Environment: {runtimeEnvironmentMode}</span>
+                  <span>API: {apiBaseDisplay}</span>
+                  <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+                </>
+              ) : null}
               <span>{toolbarStatusSummary}</span>
               <span>
                 {projectGraphLoading
@@ -924,11 +942,15 @@ export function Toolbar() {
             </>
           ) : (
             <>
-              <span>Run: {uiMode === "developer" ? runControlState : runControlState === "paused" ? "Paused" : runControlState === "stopped" ? "Stopped" : runControlState === "running" ? "Running" : "Idle"}</span>
-              <span>Frontier: {formatFrontierStatusLabel(frontierStatus)}</span>
-              <span>Environment: {runtimeEnvironmentMode}</span>
-              <span>API: {apiBaseDisplay}</span>
-              <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+              <span>Status: {uiMode === "developer" ? runControlState : runControlState === "paused" ? "Paused" : runControlState === "stopped" ? "Stopped" : runControlState === "running" ? "Running" : "Idle"}</span>
+              <span>Progress: {formatFrontierStatusLabel(frontierStatus)}</span>
+              {uiMode === "developer" ? (
+                <>
+                  <span>Environment: {runtimeEnvironmentMode}</span>
+                  <span>API: {apiBaseDisplay}</span>
+                  <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+                </>
+              ) : null}
               <span>{toolbarStatusSummary}</span>
               <span>
                 Now:
@@ -1409,38 +1431,46 @@ export function Toolbar() {
             fontSize: 11,
           }}
         >
-          <input
-            value={authTokenInput}
-            onChange={(event) => setAuthTokenInput(event.target.value)}
-            placeholder="Paste bearer token..."
-            style={{ ...CONTROL_STYLE, background: "#0f1117", width: 320 }}
-          />
-          <button
-            onClick={() => void setAuthToken(authTokenInput.trim())}
-            style={CONTROL_STYLE}
-          >
-            {sessionLifecycle === "signed_in" ? "Update token" : "Add token"}
-          </button>
-          <button
-            onClick={() => void clearAuthToken()}
-            style={CONTROL_STYLE}
-          >
-            Sign out
-          </button>
+          {uiMode === "developer" || showAuthPanel || sessionLifecycle !== "signed_in" ? (
+            <>
+              <input
+                value={authTokenInput}
+                onChange={(event) => setAuthTokenInput(event.target.value)}
+                placeholder="Paste sign-in token..."
+                style={{ ...CONTROL_STYLE, background: "#0f1117", width: 320 }}
+              />
+              <button
+                onClick={() => void setAuthToken(authTokenInput.trim())}
+                style={CONTROL_STYLE}
+              >
+                {sessionLifecycle === "signed_in" ? "Update token" : "Sign in"}
+              </button>
+              <button
+                onClick={() => void clearAuthToken()}
+                style={CONTROL_STYLE}
+              >
+                Sign out
+              </button>
+            </>
+          ) : (
+            <button onClick={() => setShowAuthPanel(true)} style={CONTROL_STYLE}>
+              Sign in
+            </button>
+          )}
           <span>
             {sessionLifecycle === "signed_in"
               ? `Signed in as ${currentActor.displayName}.`
               : sessionLifecycle === "expired_session"
-                ? "Your session has expired. Add a new token to continue."
+                ? "Your session has expired. Sign in again to continue."
                 : sessionLifecycle === "invalid_session"
-                  ? "Your session is not valid for this action. Add a new token to continue."
-                  : "This environment allows viewing, but protected actions require sign-in."}
+                  ? "Sign in to manage projects and approvals."
+                  : "View-only until you sign in."}
           </span>
         </div>
       ) : null}
       <ActivityPanel />
 
-      {showCreate && (
+      {createDialogOpen && (
         <div
           style={{
             position: "fixed",
@@ -1464,7 +1494,7 @@ export function Toolbar() {
               gap: 12,
             }}
           >
-            <h2 style={{ color: "#e2e8f0", fontSize: 16, fontWeight: 700 }}>New Execution Graph</h2>
+            <h2 style={{ color: "#e2e8f0", fontSize: 16, fontWeight: 700 }}>New Project</h2>
             {[
               { label: "Title", value: title, onChange: setTitle, placeholder: "e.g. Build auth module" },
               { label: "Goal", value: goal, onChange: setGoal, placeholder: "Describe the task in full..." },
@@ -1508,7 +1538,7 @@ export function Toolbar() {
             ))}
             <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
               <button
-                onClick={() => setShowCreate(false)}
+                onClick={() => setCreateDialogOpen(false)}
                 style={{
                   background: "#2d3748",
                   color: "#e2e8f0",
@@ -1534,7 +1564,7 @@ export function Toolbar() {
                   fontWeight: 700,
                 }}
               >
-                Create Graph
+                Create Project
               </button>
             </div>
           </div>

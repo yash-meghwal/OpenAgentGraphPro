@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { FirstRunWizard } from "./FirstRunWizard.js";
 import type { FormEvent } from "react";
 import type {
   AgentActivityRecord,
@@ -100,45 +101,43 @@ function DashboardSetupStrip({
 }) {
   const workspaceStatus = handoff?.summary.workspaceRoot
     ? {
-        label: "Workspace configured",
+        label: "Your folder",
         status: "done" as const,
-        detail: `${handoff.summary.workspaceRoot} (${handoff.summary.workspaceRootSource ?? "reported"})`,
+        detail: "Ready",
       }
     : {
-        label: "Workspace configured",
+        label: "Your folder",
         status: "warning" as const,
-        detail: handoffLoading
-          ? "Checking handoff source..."
-          : handoffError || "Generate a handoff to confirm the active workspace root.",
+        detail: handoffLoading ? "Checking..." : handoffError || "Not set up yet",
       };
   const scanStatus = handoff?.summary.codeFileCount
     ? {
-        label: "Product Graph scan",
+        label: "Code overview",
         status: handoff.summary.workspacePathCheck?.status === "mismatch" ? "warning" as const : "done" as const,
-        detail: `${handoff.summary.latestCodeScanUpdatedAt ?? "Scan timestamp unknown"}; ${handoff.summary.codeFileCount} files, ${handoff.summary.codeSymbolCount} symbols.`,
+        detail: `${handoff.summary.codeFileCount.toLocaleString()} files scanned`,
       }
     : {
-        label: "Product Graph scan",
+        label: "Code overview",
         status: "warning" as const,
-        detail: "Run Scan Codebase from Product Graph to populate Code Map context.",
+        detail: "Scan your project from the Product & code tab",
       };
   const handoffStatus = handoff?.summary.handoffFile?.exists
     ? {
-        label: "Handoff written",
+        label: "Summary report",
         status: "done" as const,
-        detail: `${handoff.summary.handoffFile.path ?? "GRAPH_REPORT.md"}${handoff.summary.handoffFile.updatedAt ? ` updated ${handoff.summary.handoffFile.updatedAt}` : " is present"}.`,
+        detail: "Ready",
       }
     : {
-        label: "Handoff written",
+        label: "Summary report",
         status: "warning" as const,
-        detail: "Write GRAPH_REPORT.md after scans or product intent changes.",
+        detail: "Generated after you scan or update product intent",
       };
   const providerStep = {
-    label: "Provider optional",
+    label: "AI assistant (optional)",
     status: providerStatus.configured ? "done" as const : "neutral" as const,
     detail: providerStatus.configured
-      ? `${PROVIDER_SETUP_LABELS[providerStatus.provider === "unset" ? "ollama" : providerStatus.provider]} configured for AI run execution.`
-      : "Graph scans, Code Map, Project Graph, and GRAPH_REPORT.md work with no provider key.",
+      ? `${PROVIDER_SETUP_LABELS[providerStatus.provider === "unset" ? "ollama" : providerStatus.provider]} connected`
+      : "Optional — you can supervise without AI",
   };
   const steps = [workspaceStatus, scanStatus, handoffStatus, providerStep];
 
@@ -156,9 +155,9 @@ function DashboardSetupStrip({
       }}
     >
       <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 900 }}>Start here</div>
+        <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 900 }}>Getting started</div>
         <div style={{ color: "#93c5fd", fontSize: 11, fontWeight: 800 }}>
-          Provider keys are optional for graph and handoff workflows.
+          AI setup is optional — you can supervise work without it.
         </div>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(135px, 1fr))", gap: 8 }}>
@@ -220,6 +219,8 @@ function ProviderSetupCard({
   onSave: (input: ProviderSetupInput) => Promise<unknown>;
   onClear: () => Promise<unknown>;
 }) {
+  const [collapsed, setCollapsed] = useState(!providerStatus.configured);
+  const [setupView, setSetupView] = useState<"simple" | "advanced">("simple");
   const [providerMode, setProviderMode] = useState<ProviderSetupMode>(
     providerStatus.provider !== "unset"
       ? providerStatus.provider
@@ -300,6 +301,58 @@ function ProviderSetupCard({
     }
   }
 
+  async function handleSimpleChoice(choice: "openai" | "gemini" | "ollama") {
+    setSetupView("advanced");
+    setProviderMode(choice);
+    setModel(PROVIDER_SETUP_DEFAULT_MODELS[choice]);
+    setBaseUrl(PROVIDER_SETUP_DEFAULT_BASE_URLS[choice] ?? "");
+    setApiKey("");
+    setCollapsed(false);
+  }
+
+  if (collapsed) {
+    return (
+      <div
+        style={{
+          background: "#111827",
+          border: `1px solid ${providerReady ? "#276749" : "#374151"}`,
+          borderRadius: 14,
+          padding: 14,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 12,
+          alignItems: "center",
+          flexWrap: "wrap",
+        }}
+      >
+        <div style={{ display: "grid", gap: 4 }}>
+          <div style={{ color: "#94a3b8", fontSize: 10, fontWeight: 800, textTransform: "uppercase" }}>
+            AI assistant (optional)
+          </div>
+          <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 800 }}>
+            {providerReady ? `${statusProviderLabel} connected` : "Skip for now — set up later if you want AI help"}
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={() => setCollapsed(false)}
+          style={{
+            background: "#2563eb",
+            color: "#fff",
+            border: "none",
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 12,
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          {providerReady ? "Change AI setup" : "Set up AI"}
+        </button>
+      </div>
+    );
+  }
+
   return (
     <form
       onSubmit={(event) => void handleSubmit(event)}
@@ -315,16 +368,66 @@ function ProviderSetupCard({
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ color: providerReady ? "#68d391" : "#f6ad55", fontSize: 10, fontWeight: 800, textTransform: "uppercase" }}>
-            Provider setup
+            AI assistant (optional)
           </div>
           <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 800 }}>
-            {providerReady ? `${statusProviderLabel} provider ready` : "Choose an AI provider"}
+            {providerReady ? `${statusProviderLabel} connected` : "Choose how AI should help"}
           </div>
         </div>
-        <span style={{ color: providerReady ? "#68d391" : "#f6ad55", fontSize: 11, fontWeight: 800 }}>
-          {sourceLabel}
-        </span>
+        <button
+          type="button"
+          onClick={() => setCollapsed(true)}
+          style={{ background: "transparent", border: "none", color: "#94a3b8", fontSize: 11, fontWeight: 700, cursor: "pointer" }}
+        >
+          Collapse
+        </button>
       </div>
+      {setupView === "simple" ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          {(
+            [
+              { id: "openai" as const, label: "Use ChatGPT" },
+              { id: "gemini" as const, label: "Use Gemini" },
+              { id: "ollama" as const, label: "Use local AI" },
+            ] as const
+          ).map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              onClick={() => void handleSimpleChoice(option.id)}
+              style={{
+                textAlign: "left",
+                background: "#0f172a",
+                border: "1px solid #374151",
+                borderRadius: 8,
+                color: "#e2e8f0",
+                cursor: "pointer",
+                fontSize: 12,
+                fontWeight: 700,
+                padding: "10px 12px",
+              }}
+            >
+              {option.label}
+            </button>
+          ))}
+          <button
+            type="button"
+            onClick={() => setSetupView("advanced")}
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#93c5fd",
+              cursor: "pointer",
+              fontSize: 11,
+              fontWeight: 700,
+              textAlign: "left",
+              padding: 0,
+            }}
+          >
+            Advanced setup
+          </button>
+        </div>
+      ) : (
       <div style={{ display: "grid", gap: 8 }}>
         <label style={{ color: "#cbd5e0", display: "grid", gap: 4, fontSize: 11, fontWeight: 800 }}>
           Provider
@@ -452,6 +555,7 @@ function ProviderSetupCard({
               </div>
             </>
           ) : null}
+        </div>
         <button
           type="submit"
           disabled={!canSave}
@@ -488,12 +592,14 @@ function ProviderSetupCard({
             Clear runtime provider
           </button>
         ) : null}
-        </div>
       </div>
+      )}
       <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.45 }}>
         {canConfigure
-          ? "Dashboard changes live only in backend memory for this running process. Graph scans, Code Map, Project Graph, and GRAPH_REPORT.md do not need a provider key."
-          : "Switch to an operator or admin actor to configure provider execution."}
+          ? setupView === "advanced"
+            ? "Advanced settings apply to this running session only. You can scan code and supervise projects without AI."
+            : "AI is optional. You can scan code and supervise projects without connecting an assistant."
+          : "Ask an operator or admin to configure AI if you need automated help."}
       </div>
       {message ? <div style={{ color: providerReady ? "#68d391" : "#f6ad55", fontSize: 12 }}>{message}</div> : null}
     </form>
@@ -779,6 +885,8 @@ export function DashboardView() {
     configureProvider,
     clearRuntimeProviderConfig,
     dismissOnboarding,
+    firstRunWizardCompleted,
+    setCreateDialogOpen,
     openGraph,
     loadSimilarRuns,
     similarRuns,
@@ -874,8 +982,16 @@ export function DashboardView() {
     );
   }
 
+  const showFirstRunWizard =
+    !firstRunWizardCompleted &&
+    dashboard.length === 0 &&
+    runtimeStatus !== "unreachable" &&
+    sessionLifecycle === "signed_in";
+
   if (dashboard.length === 0) {
     return (
+      <>
+      {showFirstRunWizard ? <FirstRunWizard /> : null}
       <div
         style={{
           flex: 1,
@@ -920,10 +1036,10 @@ export function DashboardView() {
                       letterSpacing: "0.08em",
                     }}
                   >
-                    First run guide
+                    Welcome
                   </div>
                   <div style={{ color: "#e2e8f0", fontSize: 15, fontWeight: 800 }}>
-                    What you are seeing
+                    How OpenAgentGraph works
                   </div>
                 </div>
                 <button
@@ -941,7 +1057,7 @@ export function DashboardView() {
                 </button>
               </div>
               <div style={{ color: "#cbd5e0", fontSize: 13, lineHeight: 1.5 }}>
-                OpenAgentGraph shows projection-derived run health, graph progress, evidence, and human decisions.
+                You create a project, AI works in clear steps, and you review or approve along the way. Nothing runs without your oversight.
               </div>
               <div style={{ display: "grid", gap: 6, color: "#a0aec0", fontSize: 12, lineHeight: 1.45 }}>
                 {emptyState.nextSteps.map((step) => (
@@ -952,6 +1068,25 @@ export function DashboardView() {
           ) : null}
           <div style={{ color: "#e2e8f0", fontSize: 20, fontWeight: 800 }}>{emptyState.title}</div>
           <div style={{ color: "#cbd5e0", fontSize: 14, lineHeight: 1.5 }}>{emptyState.body}</div>
+          {emptyState.primaryActionLabel ? (
+            <button
+              type="button"
+              onClick={() => setCreateDialogOpen(true)}
+              style={{
+                background: "#2563eb",
+                color: "#fff",
+                border: "none",
+                borderRadius: 10,
+                padding: "10px 16px",
+                fontSize: 13,
+                fontWeight: 800,
+                cursor: "pointer",
+                justifySelf: "start",
+              }}
+            >
+              {emptyState.primaryActionLabel}
+            </button>
+          ) : null}
           <DashboardSetupStrip
             handoff={productGraphHandoff}
             handoffLoading={productGraphHandoffLoading}
@@ -966,14 +1101,17 @@ export function DashboardView() {
             onSave={configureProvider}
             onClear={clearRuntimeProviderConfig}
           />
-          <div style={{ color: "#94a3b8", fontSize: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <span>Environment: {runtimeEnvironmentMode}</span>
-            <span>API: {apiBaseDisplay}</span>
-            <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
-            <span>{runtimeHealthSummary}</span>
-          </div>
+          {uiMode === "developer" ? (
+            <div style={{ color: "#94a3b8", fontSize: 12, display: "flex", gap: 12, flexWrap: "wrap" }}>
+              <span>Environment: {runtimeEnvironmentMode}</span>
+              <span>API: {apiBaseDisplay}</span>
+              <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+              <span>{runtimeHealthSummary}</span>
+            </div>
+          ) : null}
         </div>
       </div>
+      </>
     );
   }
 
@@ -1031,13 +1169,17 @@ export function DashboardView() {
           : `Local actor mode is active for ${currentActor.displayName}.`}
       </div>
 
-      <div style={{ color: "#718096", fontSize: 11, display: "flex", gap: 12, flexWrap: "wrap" }}>
-        <span>Environment: {runtimeEnvironmentMode}</span>
-        <span>API: {apiBaseDisplay}</span>
-        <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
-        <span>{runtimeHealthSummary}</span>
-        {runtimeFallbackLikely ? <span>Using fallback behavior</span> : null}
-      </div>
+      {uiMode === "developer" ? (
+        <div style={{ color: "#718096", fontSize: 11, display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <span>Environment: {runtimeEnvironmentMode}</span>
+          <span>API: {apiBaseDisplay}</span>
+          <span>Runtime: {formatRuntimeStatusLabel(runtimeStatus)}</span>
+          <span>{runtimeHealthSummary}</span>
+          {runtimeFallbackLikely ? <span>Using fallback behavior</span> : null}
+        </div>
+      ) : runtimeFallbackLikely ? (
+        <div style={{ color: "#718096", fontSize: 11 }}>Some AI features are limited right now.</div>
+      ) : null}
 
       <DashboardSetupStrip
         handoff={productGraphHandoff}
