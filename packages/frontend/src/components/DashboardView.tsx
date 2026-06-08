@@ -10,9 +10,17 @@ import type {
 import { sanitizeOperationalText } from "@openagentgraph/shared";
 import { useStore } from "../lib/store.js";
 import { filterDashboardItems, findMostUrgentRun, sortDashboardItems } from "../lib/dashboard.js";
+import { getSimpleNodeStatusLabel } from "../lib/activeTaskGuide.js";
 import {
+  formatAgentContextPackSummary,
+  formatAttentionLabel,
   formatFrontierStatusLabel,
+  formatGraphStatusLabel,
+  formatLifecycleBucketLabel,
+  formatRunControlStateLabel,
   formatRuntimeStatusLabel,
+  getAttentionLabelColor,
+  getDashboardMetricLabel,
   getOnboardingState,
   getRuntimeBannerTone,
 } from "../lib/productCopy.js";
@@ -188,20 +196,6 @@ function DashboardSetupStrip({
       </div>
     </div>
   );
-}
-
-function attentionTone(label: "low" | "medium" | "high" | "urgent") {
-  switch (label) {
-    case "urgent":
-      return "#fc8181";
-    case "high":
-      return "#f6ad55";
-    case "medium":
-      return "#f6e05e";
-    case "low":
-    default:
-      return "#68d391";
-  }
 }
 
 function ProviderSetupCard({
@@ -617,12 +611,14 @@ function AgentCollaborationCard({
   error,
   message,
   canManage,
+  uiMode,
   onLoadContext,
   onAcceptProposal,
   onDismissProposal,
   onOpenGraph,
 }: {
   graphId: string | null;
+  uiMode: "default" | "developer";
   frontier: GraphFrontierNodeSummary[];
   summary: AgentFrontierSummary | null;
   activity: AgentActivityRecord[];
@@ -654,11 +650,15 @@ function AgentCollaborationCard({
       <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start", flexWrap: "wrap" }}>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ color: "#63b3ed", fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.08em" }}>
-            Agent coordination
+            {uiMode === "developer" ? "Agent coordination" : "Other assistants"}
           </div>
-          <div style={{ color: "#e2e8f0", fontSize: 16, fontWeight: 800 }}>Agent-ready work</div>
+          <div style={{ color: "#e2e8f0", fontSize: 16, fontWeight: 800 }}>
+            {uiMode === "developer" ? "Agent-ready work" : "Assistants reporting in"}
+          </div>
           <div style={{ color: "#94a3b8", fontSize: 12, lineHeight: 1.45 }}>
-            External agents can read context, report evidence, and propose work without taking over the runner.
+            {uiMode === "developer"
+              ? "External agents can read context, report evidence, and propose work without taking over the runner."
+              : "Other AI assistants can share updates and suggestions without taking over your project."}
           </div>
         </div>
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
@@ -676,7 +676,7 @@ function AgentCollaborationCard({
               fontWeight: 800,
             }}
           >
-            {loading ? "Loading..." : "Load context pack"}
+            {loading ? "Loading..." : uiMode === "developer" ? "Load context pack" : "Load assistant context"}
           </button>
           <button
             disabled={!hasGraph}
@@ -712,7 +712,9 @@ function AgentCollaborationCard({
           ))}
         </div>
       ) : (
-        <div style={{ color: "#94a3b8", fontSize: 12 }}>No run frontier is loaded yet.</div>
+        <div style={{ color: "#94a3b8", fontSize: 12 }}>
+          {uiMode === "developer" ? "No run frontier is loaded yet." : "No active steps are loaded yet."}
+        </div>
       )}
 
       {frontier.length > 0 ? (
@@ -724,7 +726,9 @@ function AgentCollaborationCard({
               <div key={node.nodeId} style={{ color: "#cbd5e1", fontSize: 12, display: "grid", gap: 2 }}>
                 <strong style={{ color: "#e2e8f0" }}>{title}</strong>
                 <span>
-                  {node.status} · {node.kind} · {summary}
+                  {uiMode === "developer"
+                    ? `${node.status} · ${node.kind} · ${summary}`
+                    : `${getSimpleNodeStatusLabel({ status: node.status })} · ${summary}`}
                 </span>
               </div>
             );
@@ -734,8 +738,13 @@ function AgentCollaborationCard({
 
       {context ? (
         <div style={{ border: "1px solid #263244", borderRadius: 8, padding: 10, color: "#cbd5e1", fontSize: 12, lineHeight: 1.45 }}>
-          Context pack ready: {context.frontier.length} frontier nodes, {context.recentAgentActivity.length} recent agent updates,{" "}
-          {context.planProposals.length} open proposals.
+          {uiMode === "developer"
+            ? `Context pack ready: ${context.frontier.length} frontier nodes, ${context.recentAgentActivity.length} recent agent updates, ${context.planProposals.length} open proposals.`
+            : formatAgentContextPackSummary({
+                stepCount: context.frontier.length,
+                updateCount: context.recentAgentActivity.length,
+                proposalCount: context.planProposals.length,
+              })}
         </div>
       ) : null}
 
@@ -1135,14 +1144,14 @@ export function DashboardView() {
         }}
       >
         {[
-          { label: "Urgent runs", value: dashboardSummary.urgentRunCount, tone: "#fc8181" },
-          { label: "Needs review", value: dashboardSummary.needsReviewCount, tone: "#f6ad55" },
-          { label: "Blocked", value: dashboardSummary.blockedRunCount, tone: "#f6e05e" },
-          { label: "Active", value: dashboardSummary.activeRunCount, tone: "#63b3ed" },
-          { label: "Archived", value: dashboardSummary.archivedRunCount, tone: "#718096" },
+          { key: "urgent" as const, value: dashboardSummary.urgentRunCount, tone: "#fc8181" },
+          { key: "needsReview" as const, value: dashboardSummary.needsReviewCount, tone: "#f6ad55" },
+          { key: "blocked" as const, value: dashboardSummary.blockedRunCount, tone: "#f6e05e" },
+          { key: "active" as const, value: dashboardSummary.activeRunCount, tone: "#63b3ed" },
+          { key: "archived" as const, value: dashboardSummary.archivedRunCount, tone: "#718096" },
         ].map((item) => (
           <div
-            key={item.label}
+            key={item.key}
             style={{
               background: "#111827",
               border: "1px solid #1f2937",
@@ -1154,7 +1163,7 @@ export function DashboardView() {
             }}
           >
             <div style={{ color: "#718096", fontSize: 11, textTransform: "uppercase", fontWeight: 700 }}>
-              {item.label}
+              {getDashboardMetricLabel(item.key, uiMode)}
             </div>
             <div style={{ color: item.tone, fontSize: 24, fontWeight: 800 }}>{item.value}</div>
           </div>
@@ -1164,9 +1173,13 @@ export function DashboardView() {
       <div style={{ color: "#94a3b8", fontSize: 12 }}>
         {authMode === "jwt"
           ? sessionLifecycle === "signed_in"
-            ? `Signed in as ${currentActor.displayName} with ${currentActor.role} access.`
-            : authMessage || "Read-only mode until a valid session is available."
-          : `Local actor mode is active for ${currentActor.displayName}.`}
+            ? uiMode === "developer"
+              ? `Signed in as ${currentActor.displayName} with ${currentActor.role} access.`
+              : `Signed in as ${currentActor.displayName}.`
+            : authMessage || (uiMode === "developer" ? "Read-only mode until a valid session is available." : "Sign in to manage projects.")
+          : uiMode === "developer"
+            ? `Local actor mode is active for ${currentActor.displayName}.`
+            : `Signed in as ${currentActor.displayName}.`}
       </div>
 
       {uiMode === "developer" ? (
@@ -1208,6 +1221,7 @@ export function DashboardView() {
         error={agentCollaborationError}
         message={agentCollaborationMessage}
         canManage={canConfigureProvider}
+        uiMode={uiMode}
         onLoadContext={loadAgentContext}
         onAcceptProposal={acceptAgentPlanProposal}
         onDismissProposal={dismissAgentPlanProposal}
@@ -1243,7 +1257,7 @@ export function DashboardView() {
           <input
             value={dashboardQuery}
             onChange={(event) => setDashboardQuery(event.target.value)}
-            placeholder="Search goals, drift, notifications, review reasons..."
+            placeholder={uiMode === "developer" ? "Search goals, drift, notifications, review reasons..." : "Search projects and updates..."}
             style={{
               background: "#111827",
               color: "#e2e8f0",
@@ -1362,7 +1376,7 @@ export function DashboardView() {
             opacity: mostUrgentRun ? 1 : 0.6,
           }}
         >
-          Open most urgent run
+          {uiMode === "developer" ? "Open most urgent run" : "Open project that needs you"}
         </button>
       </div>
 
@@ -1406,7 +1420,7 @@ export function DashboardView() {
               </div>
               <div
                 style={{
-                  color: attentionTone(item.attentionLabel),
+                  color: getAttentionLabelColor(item.attentionLabel),
                   fontSize: 11,
                   fontWeight: 800,
                   textTransform: "uppercase",
@@ -1416,19 +1430,29 @@ export function DashboardView() {
                   gap: 4,
                 }}
               >
-                <span>{item.attentionLabel}</span>
-                <span style={{ color: "#94a3b8" }}>{item.lifecycleBucket.replace("_", " ")}</span>
+                <span style={{ color: getAttentionLabelColor(item.attentionLabel) }}>
+                  {uiMode === "developer" ? item.attentionLabel : formatAttentionLabel(item.attentionLabel)}
+                </span>
+                <span style={{ color: "#94a3b8" }}>
+                  {uiMode === "developer" ? item.lifecycleBucket.replace("_", " ") : formatLifecycleBucketLabel(item.lifecycleBucket)}
+                </span>
               </div>
             </div>
 
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", color: "#cbd5e0", fontSize: 12 }}>
-              <span>Status: {item.graphStatus}</span>
-              <span>Run: {item.runControlState}</span>
+              <span>
+                Status: {uiMode === "developer" ? item.graphStatus : formatGraphStatusLabel(item.graphStatus)}
+              </span>
+              <span>
+                Run: {uiMode === "developer" ? item.runControlState : formatRunControlStateLabel(item.runControlState)}
+              </span>
               {item.waitingForApproval ? <span>Waiting for approval</span> : null}
               <span>
-                Progress: {item.completedNodeCount}/{item.plannedNodeCount}
+                Progress: {item.completedNodeCount}/{item.plannedNodeCount} steps
               </span>
-              <span>Frontier: {formatFrontierStatusLabel(item.frontierStatus)}</span>
+              <span>
+                {uiMode === "developer" ? "Frontier" : "Health"}: {formatFrontierStatusLabel(item.frontierStatus)}
+              </span>
               {item.needsHumanReview ? <span>Needs review</span> : null}
             </div>
 
@@ -1472,7 +1496,7 @@ export function DashboardView() {
                   cursor: "pointer",
                 }}
               >
-                Similar runs
+                {uiMode === "developer" ? "Similar runs" : "Similar projects"}
               </button>
             </div>
 
@@ -1493,7 +1517,9 @@ export function DashboardView() {
 
       {similarRunsForGraphId ? (
         <div style={{ display: "grid", gap: 10 }}>
-          <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 800 }}>Similar past runs</div>
+          <div style={{ color: "#e2e8f0", fontSize: 14, fontWeight: 800 }}>
+            {uiMode === "developer" ? "Similar past runs" : "Similar past projects"}
+          </div>
           {similarRuns.length === 0 ? (
             <div style={{ color: "#94a3b8", fontSize: 12 }}>
               No similar runs were found from the current projection-derived history.

@@ -2427,6 +2427,7 @@ describe("ProductGraphView", () => {
         onCreateNode={onCreateNode}
         onCreateEdge={onCreateEdge}
         onCreateIntentBundle={onCreateIntentBundle}
+        uiMode="developer"
       />
     );
 
@@ -5877,6 +5878,7 @@ describe("ProductGraphView", () => {
         onWriteHandoff={onWriteHandoff}
         onScanCodebase={onScanCodebase}
         onImportSpecKit={onImportSpecKit}
+        uiMode="developer"
       />
     );
     const readOnlyMarkup = renderToStaticMarkup(
@@ -5972,6 +5974,7 @@ describe("ProductGraphView", () => {
         onCreateIntentBundle={onCreateIntentBundle}
         onGenerateHandoff={onGenerateHandoff}
         onWriteHandoff={onWriteHandoff}
+        uiMode="developer"
       />
     );
 

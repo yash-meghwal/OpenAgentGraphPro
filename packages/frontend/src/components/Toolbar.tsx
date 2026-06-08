@@ -13,6 +13,7 @@ import {
   getRuntimeBannerTone,
 } from "../lib/productCopy.js";
 import { deriveGraphRuntime } from "../lib/graphRuntime.js";
+import { getSimpleNodeStatusLabel } from "../lib/activeTaskGuide.js";
 import {
   getActiveNode,
   getJustFinishedNode,
@@ -951,7 +952,9 @@ export function Toolbar() {
           ) : (
             <>
               <span>Status: {uiMode === "developer" ? runControlState : runControlState === "paused" ? "Paused" : runControlState === "stopped" ? "Stopped" : runControlState === "running" ? "Running" : "Idle"}</span>
-              <span>Progress: {formatFrontierStatusLabel(frontierStatus)}</span>
+              <span>
+                {uiMode === "developer" ? "Progress" : "Health"}: {formatFrontierStatusLabel(frontierStatus)}
+              </span>
               {uiMode === "developer" ? (
                 <>
                   <span>Environment: {runtimeEnvironmentMode}</span>
@@ -973,7 +976,9 @@ export function Toolbar() {
               <span>
                 Next:
                 {" "}
-                {nextNode ? `${nextNode.title} (${getNodeStatusCopy(nextNode)})` : "No pending step"}
+                {nextNode
+                  ? `${nextNode.title} (${uiMode === "developer" ? getNodeStatusCopy(nextNode) : getSimpleNodeStatusLabel(nextNode)})`
+                  : "No pending step"}
               </span>
               <span>{runHealthSummary || `${completedNodeCount} of ${plannedNodeCount} steps completed.`}</span>
             </>
@@ -1092,7 +1097,7 @@ export function Toolbar() {
           </>
         ) : null}
 
-        {currentView === "graph" ? (
+        {currentView === "graph" && uiMode === "developer" ? (
           <>
             <select
               value={filterStatus ?? ""}
@@ -1167,53 +1172,51 @@ export function Toolbar() {
               </button>
             ) : null}
 
-            {uiMode === "developer" ? (
-              <>
-                <label style={{ color: "#a0aec0", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                  <input
-                    type="checkbox"
-                    checked={showSupersededNodes}
-                    onChange={(event) => setShowSupersededNodes(event.target.checked)}
-                    disabled={derivedGraphRuntime.largeGraphModeActive}
-                  />
-                  Superseded
-                </label>
-                <label style={{ color: "#a0aec0", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                  <input
-                    type="checkbox"
-                    checked={showRevisionBranches}
-                    onChange={(event) => setShowRevisionBranches(event.target.checked)}
-                    disabled={derivedGraphRuntime.largeGraphModeActive}
-                  />
-                  Revisions
-                </label>
-                <label style={{ color: "#a0aec0", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
-                  <input
-                    type="checkbox"
-                    checked={showReplanBranches}
-                    onChange={(event) => setShowReplanBranches(event.target.checked)}
-                    disabled={derivedGraphRuntime.largeGraphModeActive}
-                  />
-                  Replans
-                </label>
-                <select
-                  value={graphQuality}
-                  onChange={(event) => setGraphQuality(event.target.value as "standard" | "performance")}
-                  style={CONTROL_STYLE}
-                >
-                  <option value="standard">standard</option>
-                  <option value="performance">performance</option>
-                </select>
-                <button onClick={resetGraphVisibility} style={CONTROL_STYLE}>
-                  Reset graph visibility
-                </button>
-                {derivedGraphRuntime.largeGraphModeActive ? (
-                  <span style={{ color: "#90cdf4", fontSize: 11 }}>
-                    Large graph mode is hiding older branches until you switch to full detail.
-                  </span>
-                ) : null}
-              </>
-            ) : null}
+            <>
+              <label style={{ color: "#a0aec0", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={showSupersededNodes}
+                  onChange={(event) => setShowSupersededNodes(event.target.checked)}
+                  disabled={derivedGraphRuntime.largeGraphModeActive}
+                />
+                Superseded
+              </label>
+              <label style={{ color: "#a0aec0", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={showRevisionBranches}
+                  onChange={(event) => setShowRevisionBranches(event.target.checked)}
+                  disabled={derivedGraphRuntime.largeGraphModeActive}
+                />
+                Revisions
+              </label>
+              <label style={{ color: "#a0aec0", fontSize: 11, display: "flex", alignItems: "center", gap: 4 }}>
+                <input
+                  type="checkbox"
+                  checked={showReplanBranches}
+                  onChange={(event) => setShowReplanBranches(event.target.checked)}
+                  disabled={derivedGraphRuntime.largeGraphModeActive}
+                />
+                Replans
+              </label>
+              <select
+                value={graphQuality}
+                onChange={(event) => setGraphQuality(event.target.value as "standard" | "performance")}
+                style={CONTROL_STYLE}
+              >
+                <option value="standard">standard</option>
+                <option value="performance">performance</option>
+              </select>
+              <button onClick={resetGraphVisibility} style={CONTROL_STYLE}>
+                Reset graph visibility
+              </button>
+              {derivedGraphRuntime.largeGraphModeActive ? (
+                <span style={{ color: "#90cdf4", fontSize: 11 }}>
+                  Large graph mode is hiding older branches until you switch to full detail.
+                </span>
+              ) : null}
+            </>
           </>
         ) : null}
 

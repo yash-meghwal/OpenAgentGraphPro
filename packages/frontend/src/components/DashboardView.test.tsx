@@ -596,6 +596,7 @@ describe("DashboardView empty states", () => {
         planProposals: useStore.getState().agentPlanProposals,
       }),
       dismissAgentPlanProposal: async () => undefined,
+      uiMode: "developer",
     });
 
     let renderer: TestRenderer.ReactTestRenderer | undefined;
@@ -725,6 +726,7 @@ describe("DashboardView empty states", () => {
       loadAgentFrontier: async () => {
         throw new Error("Agent frontier could not be loaded.");
       },
+      uiMode: "developer",
     });
 
     let renderer: TestRenderer.ReactTestRenderer | undefined;

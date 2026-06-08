@@ -1866,6 +1866,7 @@ interface ProductGraphContentProps {
   onLoadTrace?: (nodeId: string) => Promise<ProductGraphTrace>;
   onLoadCodexPlan?: (taskNodeId: string) => Promise<ProductGraphCodexPlanningPrompt>;
   onAcceptCodexPlan?: (input: AcceptProductGraphCodexPlanInput) => Promise<AcceptProductGraphCodexPlanResult>;
+  uiMode?: "default" | "developer";
 }
 
 export function shouldAutoLoadProductGraph(
@@ -2011,6 +2012,7 @@ export function ProductGraphContent({
   onLoadTrace,
   onLoadCodexPlan,
   onAcceptCodexPlan,
+  uiMode = "default",
 }: ProductGraphContentProps) {
   const [query, setQuery] = useState("");
   const [kindFilter, setKindFilter] = useState<ProductKindFilter>("all");
@@ -3235,12 +3237,61 @@ export function ProductGraphContent({
             Product & code
           </div>
           <div style={{ marginTop: 6, fontSize: 20, fontWeight: 900 }}>
-            Product intent
+            {uiMode === "developer" ? "Product intent" : "What you're building"}
           </div>
           <div style={{ marginTop: 8, color: "#94a3b8", fontSize: 12, lineHeight: 1.5 }}>
-            Planned product work, questions, criteria, and implementation tasks.
+            {uiMode === "developer"
+              ? "Planned product work, questions, criteria, and implementation tasks."
+              : "Features, goals, and tasks — with a code map showing how your project connects."}
           </div>
         </div>
+
+        {uiMode === "default" && onScanCodebase ? (
+          <div
+            role="group"
+            aria-label="Scan project"
+            style={{ background: "#0f172a", border: "1px solid #14532d", borderRadius: 12, padding: 12, display: "grid", gap: 9 }}
+          >
+            <div style={{ color: "#86efac", fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+              How the code connects
+            </div>
+            <div style={{ color: "#e2e8f0", fontSize: 13, fontWeight: 800, lineHeight: 1.45 }}>
+              {canEditProductGraph
+                ? "Scan your project to map files and how they link together."
+                : "Ask an operator to scan the project if you want the code map filled in."}
+            </div>
+            {codebaseScanProgressLine ? (
+              <div style={{ color: "#a7f3d0", fontSize: 11, lineHeight: 1.35, fontWeight: 800 }}>
+                {codebaseScanProgressLine}
+              </div>
+            ) : null}
+            {codebaseScanError ? (
+              <div style={{ color: "#f97316", fontSize: 12, lineHeight: 1.4 }}>{codebaseScanError}</div>
+            ) : null}
+            {codebaseScanMessage ? (
+              <div style={{ color: "#34d399", fontSize: 12, lineHeight: 1.4 }}>{codebaseScanMessage}</div>
+            ) : null}
+            {canEditProductGraph ? (
+              <button
+                type="button"
+                onClick={handleScanCodebase}
+                disabled={codebaseScanDisabled}
+                style={{
+                  background: codebaseScanDisabled ? "#1f2937" : "#047857",
+                  color: codebaseScanDisabled ? "#64748b" : "#ecfdf5",
+                  border: "none",
+                  borderRadius: 8,
+                  padding: "10px 12px",
+                  fontSize: 13,
+                  fontWeight: 900,
+                  cursor: codebaseScanDisabled ? "not-allowed" : "pointer",
+                }}
+              >
+                {codebaseScanPending ? "Scanning..." : "Scan project"}
+              </button>
+            ) : null}
+          </div>
+        ) : null}
 
         {productGraphPreviewMessage ? (
           <div
@@ -3262,12 +3313,20 @@ export function ProductGraphContent({
         ) : null}
 
         <div className="product-graph-stat-grid" style={{ display: "grid", gap: 8 }}>
-          {[
-            ["Nodes", productGraph.summary.nodeCount],
-            ["Links", productGraph.summary.edgeCount],
-            ["Questions", productGraph.summary.unresolvedOpenQuestionCount],
-            ["Blocked", productGraph.summary.blockedTaskCount],
-          ].map(([label, value]) => (
+          {(uiMode === "developer"
+            ? [
+                ["Nodes", productGraph.summary.nodeCount],
+                ["Links", productGraph.summary.edgeCount],
+                ["Questions", productGraph.summary.unresolvedOpenQuestionCount],
+                ["Blocked", productGraph.summary.blockedTaskCount],
+              ]
+            : [
+                ["Items", productGraph.summary.nodeCount],
+                ["Connections", productGraph.summary.edgeCount],
+                ["Open questions", productGraph.summary.unresolvedOpenQuestionCount],
+                ["Stuck tasks", productGraph.summary.blockedTaskCount],
+              ]
+          ).map(([label, value]) => (
             <div key={label} style={{ background: "#0f172a", border: "1px solid #263244", borderRadius: 10, padding: 10 }}>
               <div style={{ color: "#64748b", fontSize: 10, fontWeight: 800, textTransform: "uppercase" }}>{label}</div>
               <div style={{ marginTop: 4, fontSize: 20, fontWeight: 900 }}>{value}</div>
@@ -3956,7 +4015,7 @@ export function ProductGraphContent({
           </div>
         </div>
 
-        {canEditProductGraph ? (
+        {canEditProductGraph && uiMode === "developer" ? (
           <>
             {onGenerateHandoff || onWriteHandoff ? (
               <div
@@ -6511,6 +6570,7 @@ export function ProductGraphView() {
     runtimeFallbackLikely,
     runtimeStatus,
     sessionLifecycle,
+    uiMode,
   } = useStore();
 
   useEffect(() => {
@@ -6564,6 +6624,7 @@ export function ProductGraphView() {
       onLoadTrace={productGraphPreviewMessage ? undefined : loadProductGraphTrace}
       onLoadCodexPlan={productGraphPreviewMessage ? undefined : loadProductGraphCodexPlan}
       onAcceptCodexPlan={productGraphPreviewMessage ? undefined : acceptProductGraphCodexPlan}
+      uiMode={uiMode}
     />
   );
 }

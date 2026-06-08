@@ -1,4 +1,10 @@
-import type { FrontierStatus } from "@openagentgraph/shared";
+import type {
+  AttentionLabel,
+  DashboardLifecycleBucket,
+  FrontierStatus,
+  GraphStatus,
+  RunControlState,
+} from "@openagentgraph/shared";
 
 export type RuntimeStatusView =
   | "connected"
@@ -61,10 +67,139 @@ export function formatFrontierStatusLabel(status: FrontierStatus | null | undefi
     case "drifting":
       return "Needs attention";
     case "blocked":
-      return "Blocked";
+      return "Stuck";
     default:
       return "On track";
   }
+}
+
+/** Shared execution-status colors aligned with the default graph theme. */
+export const EXECUTION_STATUS_COLORS = {
+  pending: "#64748b",
+  ready: "#38bdf8",
+  running: "#f59e0b",
+  completed: "#34d399",
+  failed: "#f87171",
+  blocked: "#f87171",
+  superseded: "#94a3b8",
+} as const;
+
+export function formatGraphStatusLabel(status: GraphStatus | string): string {
+  switch (status) {
+    case "running":
+      return "In progress";
+    case "completed":
+      return "Done";
+    case "failed":
+      return "Failed";
+    case "blocked":
+      return "Stuck";
+    case "stopped":
+      return "Stopped";
+    case "idle":
+    default:
+      return "Not started";
+  }
+}
+
+export function formatRunControlStateLabel(state: RunControlState | string): string {
+  switch (state) {
+    case "running":
+      return "Running";
+    case "paused":
+      return "Paused";
+    case "stopped":
+      return "Stopped";
+    case "idle":
+    default:
+      return "Ready to start";
+  }
+}
+
+export function formatAttentionLabel(label: AttentionLabel | string): string {
+  switch (label) {
+    case "urgent":
+      return "Needs you now";
+    case "high":
+      return "High priority";
+    case "medium":
+      return "Watch";
+    case "low":
+    default:
+      return "On track";
+  }
+}
+
+export function getAttentionLabelColor(label: AttentionLabel | string): string {
+  switch (label) {
+    case "urgent":
+      return EXECUTION_STATUS_COLORS.failed;
+    case "high":
+      return EXECUTION_STATUS_COLORS.running;
+    case "medium":
+      return "#f6e05e";
+    case "low":
+    default:
+      return EXECUTION_STATUS_COLORS.completed;
+  }
+}
+
+export function formatLifecycleBucketLabel(bucket: DashboardLifecycleBucket | string): string {
+  switch (bucket) {
+    case "active":
+      return "In progress";
+    case "needs_attention":
+      return "Needs attention";
+    case "completed_recent":
+      return "Recently finished";
+    case "archived":
+      return "Archived";
+    default:
+      return bucket.replace(/_/g, " ");
+  }
+}
+
+export type DashboardMetricKey = "urgent" | "needsReview" | "blocked" | "active" | "archived";
+
+export function getDashboardMetricLabel(
+  key: DashboardMetricKey,
+  uiMode: "default" | "developer"
+): string {
+  if (uiMode === "developer") {
+    switch (key) {
+      case "urgent":
+        return "Urgent runs";
+      case "needsReview":
+        return "Needs review";
+      case "blocked":
+        return "Blocked";
+      case "active":
+        return "Active";
+      case "archived":
+        return "Archived";
+    }
+  }
+
+  switch (key) {
+    case "urgent":
+      return "Needs you now";
+    case "needsReview":
+      return "Needs your review";
+    case "blocked":
+      return "Stuck";
+    case "active":
+      return "In progress";
+    case "archived":
+      return "Archived";
+  }
+}
+
+export function formatAgentContextPackSummary(input: {
+  stepCount: number;
+  updateCount: number;
+  proposalCount: number;
+}): string {
+  return `Context ready: ${input.stepCount} active steps, ${input.updateCount} recent updates, ${input.proposalCount} open suggestions.`;
 }
 
 export function getRuntimeBannerTone(status: RuntimeStatusView) {

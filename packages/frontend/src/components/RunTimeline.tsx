@@ -1,6 +1,8 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../lib/store.js";
 import { buildFrontendReplayFrame } from "../lib/replay.js";
+import { getSimpleNodeStatusLabel } from "../lib/activeTaskGuide.js";
+import { formatGraphStatusLabel, formatRunControlStateLabel } from "../lib/productCopy.js";
 import { getNodeDisplaySummary, getNodeStatusCopy } from "../lib/viewMode.js";
 
 const KIND_COLOR: Record<string, string> = {
@@ -98,7 +100,7 @@ export function RunTimeline() {
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
             <div style={{ color: "#90cdf4", fontSize: 10, fontWeight: 700, textTransform: "uppercase" }}>
-              Replay
+              {uiMode === "developer" ? "Replay" : "Step history"}
             </div>
             <div style={{ color: "#e2e8f0", fontSize: 12 }}>
               Step {frame.stepIndex} of {frame.totalSteps}
@@ -157,13 +159,21 @@ export function RunTimeline() {
           </div>
         ) : null}
 
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 11, color: "#a0aec0" }}>
-          <div>Graph status: {frame.graphStatus}</div>
-          <div>Run control: {frame.runControlState}</div>
-          <div>Frontier: {frame.frontierStatus}</div>
-          <div>Nodes visible: {frame.nodes.length}</div>
-          <div>Edges visible: {frame.edges.length}</div>
-        </div>
+        {uiMode === "developer" ? (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, fontSize: 11, color: "#a0aec0" }}>
+            <div>Graph status: {frame.graphStatus}</div>
+            <div>Run control: {frame.runControlState}</div>
+            <div>Frontier: {frame.frontierStatus}</div>
+            <div>Nodes visible: {frame.nodes.length}</div>
+            <div>Edges visible: {frame.edges.length}</div>
+          </div>
+        ) : (
+          <div style={{ display: "grid", gap: 4, fontSize: 11, color: "#a0aec0" }}>
+            <div>Project: {formatGraphStatusLabel(frame.graphStatus ?? "idle")}</div>
+            <div>Run: {formatRunControlStateLabel(frame.runControlState ?? "idle")}</div>
+            <div>Steps on screen: {frame.nodes.length}</div>
+          </div>
+        )}
       </div>
 
       <div
@@ -208,7 +218,7 @@ export function RunTimeline() {
             >
               <div style={{ color: "#e2e8f0", fontSize: 12, fontWeight: 700 }}>{node.title}</div>
               <div style={{ color: "#90cdf4", fontSize: 10, textTransform: "uppercase", fontWeight: 700 }}>
-                {getNodeStatusCopy(node)}
+                {uiMode === "developer" ? getNodeStatusCopy(node) : getSimpleNodeStatusLabel(node)}
               </div>
               <div style={{ color: "#a0aec0", fontSize: 11, lineHeight: 1.35 }}>
                 {uiMode === "developer"
